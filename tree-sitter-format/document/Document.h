@@ -14,14 +14,17 @@ namespace tree_sitter_format {
 class Document {
     std::string original;
     std::vector<std::string_view> elements;
+    size_t length;
 
     struct BytePosition {
         size_t index;
         size_t offset;
     };
 
-    std::optional<BytePosition> findBytePosition(uint32_t position) const;
-    void splitAtPosition(uint32_t position);
+    BytePosition findBytePosition(uint32_t position) const;
+
+    // Returns the index of the element after the split
+    size_t splitAtPosition(uint32_t position);
 
     friend std::ostream& operator<<(std::ostream& out, const Document& document);
 
