@@ -15,8 +15,11 @@ namespace {
     }
 }
 
+extern "C" {
+const TSLanguage* tree_sitter_cpp(void);
+}
+
 namespace tree_sitter_format {
-    
     Document::BytePosition Document::findBytePosition(uint32_t position) const {
         assert(position < length);
 
@@ -77,7 +80,10 @@ namespace tree_sitter_format {
     }
 
     Document::Document(const std::filesystem::path& file) : Document(ReadFile(file)) {}
-    Document::Document(const std::string&& contents) : original(std::move(contents)), elements({original}), length(original.size()) {}
+    Document::Document(const std::string&& contents) : original(std::move(contents)), elements({original}), length(original.size()), parser(ts_parser_new(), ts_parser_delete), tree(nullptr, ts_tree_delete) {
+        ts_parser_set_language(parser.get(), tree_sitter_cpp());
+        tree.reset(ts_parser_parse(parser.get(), nullptr, inputReader()));
+    }
 
     void Document::insertBytes(uint32_t position, std::string_view bytes) {
         size_t insertPosition = splitAtPosition(position);

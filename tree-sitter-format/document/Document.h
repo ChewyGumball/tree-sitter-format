@@ -11,10 +11,16 @@
 
 namespace tree_sitter_format {
 
+using TSParserDeleter = decltype(&ts_parser_delete);
+using TSTreeDeleter = decltype(&ts_tree_delete);
+
 class Document {
     std::string original;
     std::vector<std::string_view> elements;
     size_t length;
+
+    std::unique_ptr<TSParser, TSParserDeleter> parser;
+    std::unique_ptr<TSTree, TSTreeDeleter> tree;
 
     struct BytePosition {
         size_t index;
