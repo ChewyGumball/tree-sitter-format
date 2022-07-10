@@ -161,6 +161,22 @@ namespace tree_sitter_format {
         tree.reset(ts_parser_parse(parser.get(), tree.release(), inputReader()));
         // TODO delete old tree or no?
     }
+    
+    void Document::applyEdits(const std::vector<Edit>& edits) {
+        size_t editCount = edits.size();
+        for(size_t index = 0; index < editCount; index++) {
+            const Edit& edit = edits[editCount - index - 1];
+
+            if (std::holds_alternative<DeleteEdit>(edit)) {
+                const DeleteEdit& d = std::get<DeleteEdit>(edit);
+                deleteBytes(d.range);
+            } else if (std::holds_alternative<InsertEdit>(edit)) {
+                const InsertEdit& i = std::get<InsertEdit>(edit);
+                insertBytes(i.position, i.bytes);
+            }
+        }
+
+    }
 
     const std::string& Document::originalContents() const {
         return original;

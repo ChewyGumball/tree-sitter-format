@@ -4,12 +4,40 @@ tsf_cc_binary(
     name = "tree-sitter-format",
     srcs = ["main.cpp"],
     deps = [
+        ":indentation_traverser",
+        ":constants",
         ":configuration",
         ":document",
         ":style",
+        ":traverser",
         "@tree-sitter-cpp",
         "@yaml-cpp",
     ],
+)
+
+tsf_cc_library(
+    name = "traverser",
+    hdrs = ["traversers/Traverser.h"],
+    include_prefix = "tree_sitter_format",
+    deps = ["@tree-sitter"],
+)
+
+tsf_cc_library(
+    name = "indentation_traverser",
+    hdrs = ["traversers/IndentationTraverser.h"],
+    srcs = ["traversers/IndentationTraverser.cpp"],
+    include_prefix = "tree_sitter_format",
+    deps = [
+        ":constants",
+        ":document",
+        ":style",
+    ],
+)
+
+tsf_cc_library(
+    name = "constants",
+    hdrs = ["Constants.h"],
+    include_prefix = "tree_sitter_format",
 )
 
 tsf_cc_library(

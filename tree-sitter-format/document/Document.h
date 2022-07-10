@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include <tree_sitter/api.h>
@@ -49,6 +50,18 @@ struct Range {
     }
 };
 
+struct DeleteEdit {
+    Range range;
+};
+
+struct InsertEdit {
+    Position position;
+    std::string_view bytes;
+};
+
+using Edit = std::variant<DeleteEdit, InsertEdit>;
+
+
 using TSParserDeleter = decltype(&ts_parser_delete);
 using TSTreeDeleter = decltype(&ts_tree_delete);
 
@@ -83,6 +96,8 @@ public:
 
     void insertBytes(Position position, std::string_view bytes);
     void deleteBytes(Range range);
+
+    void applyEdits(const std::vector<Edit>& edits);
 
     const std::string& originalContents() const;
     const std::string_view originalContentsAt(Range range) const;

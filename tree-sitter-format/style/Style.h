@@ -28,7 +28,7 @@ struct Style {
         bool reindent = true;
     } indentation;
 
-    const std::string& indentationString() const;
+    std::string_view indentationString() const;
 
     enum class BracePlacement { Before, After, Surround, Ignore };
     struct {

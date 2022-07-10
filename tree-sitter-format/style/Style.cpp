@@ -9,7 +9,7 @@ namespace {
 }
 
 namespace tree_sitter_format {
-    const std::string& Style::indentationString() const {
+    std::string_view Style::indentationString() const {
         static std::string s = CreateIndentationString(*this); 
         return s;
     }
