@@ -6,6 +6,9 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <variant>
+
+using namespace std::literals::string_view_literals;
 
 #include <cassert>
 
@@ -23,6 +26,7 @@ TSSymbol FOR_LOOP;
 TSSymbol FOR_RANGE_LOOP;
 TSSymbol WHILE_LOOP;
 TSSymbol DO_WHILE_LOOP;
+TSSymbol FUNCTION_DEFINITION;
 
 // Regular code block
 TSSymbol COMPOUND_STATEMENT;
@@ -48,170 +52,198 @@ std::string_view ToStr(TSNode node, std::string_view text) {
     return text.substr(start, end - start);
 }
 
-struct Context {
+struct ScopeContext {
     uint32_t depth = 0;
     uint32_t scope = 0;
     std::ostream& output;
-    Document& document;
+    
+    Position previousPosition;
 
-    TSPoint previousPoint;
-
+    const Document& document;
     const Style& style;
 };
 
-void traverse(TSNode node, Context& context);
-
-void traverseGeneric(TSNode node, Context& context) {
-    uint32_t childCount = ts_node_child_count(node);
-    for(uint32_t i = 0; i < childCount; i++) {
-        traverse(ts_node_child(node, i), context);
-    }
-}
-
-void traverseChild(TSNode node, Context& context) {
-    std::string_view token = context.document.originalContentsAt(node);
+void traverseChild(TSNode node, ScopeContext& context) {
+    std::string token = context.document.contentsAt(Range::Of(node));
 
     TSPoint currentPoint = ts_node_start_point(node);
-    for(uint32_t i = context.previousPoint.row; i < currentPoint.row; i++) {
+    for(uint32_t i = context.previousPosition.location.row; i < currentPoint.row; i++) {
         context.output << std::endl;
     }
 
-    if (context.previousPoint.row != currentPoint.row) {
+    if (context.previousPosition.location.row != currentPoint.row) {
         for(uint32_t i = 0; i < context.scope; i++) {
             context.output << context.style.indentationString();
         }
     } else {
-        const std::string& text = context.document.originalContents();
+        Range whiteSpaceRange {
+            .start = context.previousPosition,
+            .end = Position::StartOf(node),
+        };
 
-        uint32_t startByte = ts_node_start_byte(node);;
-        uint32_t whiteSpace = startByte;
-        while (whiteSpace > 0 && (text[whiteSpace - 1] == ' ' || text[whiteSpace - 1] == '\t')) {
-            whiteSpace--;
-        }
-
-        context.output << context.document.originalContentsAt(Document::Range(whiteSpace, startByte));
+        context.output << context.document.contentsAt(whiteSpaceRange);
     }
 
-    context.output << token;
+    context.output << token << std::flush;
 
-    context.previousPoint = ts_node_end_point(node);
+    context.previousPosition = Position::EndOf(node);
 }
 
-void traverseIfStatement(TSNode node, Context& context) {
+std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
+    const char* name = ts_node_field_name_for_child(node, childIndex);
+    if(name == nullptr) {
+        return std::string_view();
+    } else {
+        return name;
+    }
+}
+
+enum class ScopeChange { None, IncreaseBefore, DecreaseAfter, Both };
+
+template<size_t COUNT>
+ScopeChange NonCompoundBodyScopeChange(TSNode node, uint32_t childIndex, const std::string_view (&allowedFieldNames)[COUNT], Style::Indentation allowedIndentation) {
+    std::string_view fieldName = ChildFieldName(node, childIndex);
+    for(auto allowedName : allowedFieldNames) {
+        if (fieldName == allowedName) {
+            TSNode child = ts_node_child(node, childIndex);
+            TSSymbol childSymbol = ts_node_symbol(child);
+
+            // Compound statements handle their own indentation so they can be handled uniformly
+            if (childSymbol == COMPOUND_STATEMENT) {
+                return ScopeChange::None;
+            }
+            
+            if (allowedIndentation != Style::Indentation::None) {
+                // Since this isn't a compound statement, its a single statement body
+                // so we increase before, and decrease after
+                return ScopeChange::Both;
+            }
+        }
+    }
+
+    return ScopeChange::None;
+}
+
+ScopeChange IfStatementScopeChange(TSNode node, uint32_t childIndex, const ScopeContext& context) {
     assert(ts_node_symbol(node) == IF_STATEMENT);
+    return NonCompoundBodyScopeChange(node, childIndex, {"consequence"sv, "alternative"sv}, context.style.indentation.ifStatements);
+}
+
+ScopeChange WhileLoopScopeChange(TSNode node, uint32_t childIndex, const ScopeContext& context) {
+    assert(ts_node_symbol(node) == WHILE_LOOP);
+    return NonCompoundBodyScopeChange(node, childIndex, {"body"sv}, context.style.indentation.whileLoops);
+}
+
+ScopeChange DoWhileLoopScopeChange(TSNode node, uint32_t childIndex, const ScopeContext& context) {
+    assert(ts_node_symbol(node) == DO_WHILE_LOOP);
+    return NonCompoundBodyScopeChange(node, childIndex, {"body"sv}, context.style.indentation.whileLoops);
+}
+
+ScopeChange CompoundStatementScopeChange(TSNode node, TSNode parent, uint32_t childIndex, const ScopeContext& context) {
+    // Compound statements are '{', (statement), ... , '}'
+    // There may be no (statement) nodes, ie an empty block
 
     uint32_t childCount = ts_node_child_count(node);
-    for(uint32_t i = 0; i < childCount; i++) {
-        TSNode child = ts_node_child(node, i);
+    if (childCount == 2) {
+        return ScopeChange::None;
+    }
 
-        std::string fieldName;
-        const char* fieldNameChars = ts_node_field_name_for_child(node, i);
-        if (fieldNameChars != nullptr) {
-            fieldName = fieldNameChars;
+    TSSymbol parentSymbol = ts_node_symbol(parent);
+    Style::Indentation style = Style::Indentation::None;
+    if (parentSymbol == IF_STATEMENT) {
+        style = context.style.indentation.ifStatements;
+    } else if (parentSymbol == FOR_LOOP || parentSymbol == FOR_RANGE_LOOP) {
+        style = context.style.indentation.forLoops;
+    } else if (parentSymbol == WHILE_LOOP) {
+        style = context.style.indentation.whileLoops;
+    } else if (parentSymbol == DO_WHILE_LOOP) {
+        style = context.style.indentation.doWhileLoops;
+    } else if (parentSymbol == FUNCTION_DEFINITION) {
+        style = context.style.indentation.functionDefinitions;
+    }
+    // TODO: add case blocks
+    // TODO: add switch blocks
+
+    // We are the opening brace
+    if (childIndex == 0) {
+        switch(style) {
+            case Style::Indentation::BracesIndented:
+            case Style::Indentation::BothIndented:
+                return ScopeChange::IncreaseBefore;
+            case Style::Indentation::BodyIndented:
+            case Style::Indentation::None:
+            default:
+                return ScopeChange::None;        
         }
-
-        if (fieldName == "consequence" || fieldName == "alternative") {
-            if (ts_node_symbol(child) != COMPOUND_STATEMENT) {
-                context.scope++;
-            }
+    } 
+    
+    // We are the first statement after the opening brace
+    if (childIndex == 1) {
+        switch(style) {
+            case Style::Indentation::BodyIndented:
+            case Style::Indentation::BothIndented:
+            // If this is the only non brace child, we increment before, and decrement after
+            // otherwise, we increment before, and the decrement will happen for the child
+            // that comes before the end brace 
+                return childCount == 3 ? ScopeChange::Both : ScopeChange::IncreaseBefore;
+            case Style::Indentation::BracesIndented:
+            case Style::Indentation::None:
+            default:
+                return ScopeChange::None;        
         }
-
-        traverse(child, context);
-
-        if (fieldName == "consequence" || fieldName == "alternative") {
-            if (ts_node_symbol(child) != COMPOUND_STATEMENT) {
-                context.scope--;
-            }
+    } 
+    
+    // We are the last statement before the closing brace
+    if (childIndex == childCount - 2) {
+        switch(style) {
+            case Style::Indentation::BodyIndented:
+            case Style::Indentation::BothIndented:
+            // If this is the only non brace child, we increment before, and decrement after
+            // otherwise, we decrement after, and the increment happened for the child that
+            // came after the start brace
+                return childCount == 3 ? ScopeChange::Both : ScopeChange::DecreaseAfter;
+            case Style::Indentation::BracesIndented:
+            case Style::Indentation::None:
+            default:
+                return ScopeChange::None;        
+        }
+    } 
+    
+    // We are the closing brace
+    if (childIndex == childCount - 1) {
+        switch(style) {
+            case Style::Indentation::BracesIndented:
+            case Style::Indentation::BothIndented:
+                return ScopeChange::DecreaseAfter;
+            case Style::Indentation::BodyIndented:
+            case Style::Indentation::None:
+            default:
+                return ScopeChange::None;        
         }
     }
+
+    // This is just a statement in the middle of a block, nothing special happens with
+    // indentation here
+    return ScopeChange::None;
 }
 
-void traverseCompoundStatement(TSNode node, Context& context) {
-    uint32_t childCount = ts_node_child_count(node);
-    for(uint32_t i = 0; i < childCount; i++) {
-        if (i == 1) {
-            context.scope++;
-        }
-        // This is not an else, because of {} - when looking at the },
-        // it is the child at index 1, but ALSO the last child so no
-        // scope indentation change necessary.
-        if (i == childCount - 1) {
-            context.scope--;
-        }
+ScopeChange ScopeChangeForChild(TSNode node, TSNode parent, uint32_t childIndex, const ScopeContext& context) {
+    TSSymbol symbol = ts_node_symbol(node);
 
-        traverse(ts_node_child(node, i), context);
+    if (symbol == IF_STATEMENT) {
+        return IfStatementScopeChange(node, childIndex, context);
+    } else if (symbol == WHILE_LOOP) {
+        return WhileLoopScopeChange(node, childIndex, context);
+    } else if (symbol == DO_WHILE_LOOP) {
+        return DoWhileLoopScopeChange(node, childIndex, context);
+    } else if (symbol == COMPOUND_STATEMENT) {
+        return CompoundStatementScopeChange(node, parent, childIndex, context);
     }
+
+    return ScopeChange::None;
 }
 
-void traverseDeclarationList(TSNode node, Context& context) {
-    traverseCompoundStatement(node, context);
-}
-
-void traverseFieldDeclarationList(TSNode node, Context& context) {
-    traverseCompoundStatement(node, context);
-}
-
-void traverseEnumeratorList(TSNode node, Context& context) {
-    traverseCompoundStatement(node, context);
-}
-
-void traverseInitializationList(TSNode node, Context& context) {
-    traverseCompoundStatement(node, context);
-}
-
-void traverseForLoop(TSNode node, Context& context) {
-    uint32_t childCount = ts_node_child_count(node);
-    for(uint32_t i = 0; i < childCount; i++) {
-        TSNode child = ts_node_child(node, i);
-
-        if (i == childCount - 1 && ts_node_symbol(child) != COMPOUND_STATEMENT) {
-            context.scope++;
-        }
-
-        traverse(child, context);
-
-        if (i == childCount - 1 && ts_node_symbol(child) != COMPOUND_STATEMENT) {
-            context.scope--;
-        }
-    }
-}
-
-void traverseForRangeLoop(TSNode node, Context& context) {
-    traverseForLoop(node, context);
-}
-
-void traverseWhileLoop(TSNode node, Context& context) {
-    uint32_t childCount = ts_node_child_count(node);
-    for(uint32_t i = 0; i < childCount; i++) {
-        TSNode child = ts_node_child(node, i);
-
-        std::string fieldName;
-        const char* fieldNameChars = ts_node_field_name_for_child(node, i);
-        if (fieldNameChars != nullptr) {
-            fieldName = fieldNameChars;
-        }
-
-        if (fieldName == "body") {
-            if (ts_node_symbol(child) != COMPOUND_STATEMENT) {
-                context.scope++;
-            }
-        }
-
-        traverse(child, context);
-
-        if (fieldName == "body") {
-            if (ts_node_symbol(child) != COMPOUND_STATEMENT) {
-                context.scope--;
-            }
-        }
-    }
-}
-
-void traverseDoWhileLoop(TSNode node, Context& context) {
-    traverseWhileLoop(node, context);
-}
-
-void traverse(TSNode node, Context& context) {
+void traverse(TSNode node, TSNode parent, ScopeContext& context) {
     if (ts_node_is_null(node)) {
         return;
     }
@@ -228,31 +260,213 @@ void traverse(TSNode node, Context& context) {
     } else {
         context.depth++;
 
-        TSSymbol symbol = ts_node_symbol(node);
-        if(symbol == IF_STATEMENT) {
-            traverseIfStatement(node, context);
-        } else if (symbol == FOR_LOOP) {
-            traverseForLoop(node, context);
-        } else if (symbol == FOR_RANGE_LOOP) {
-            traverseForRangeLoop(node, context);
-        } else if (symbol == WHILE_LOOP) {
-            traverseWhileLoop(node, context);
-        } else if (symbol == DO_WHILE_LOOP) {
-            traverseDoWhileLoop(node, context);
-        } else if (symbol == COMPOUND_STATEMENT) {
-            traverseCompoundStatement(node, context);
-        } else if (symbol == DECLARATION_LIST) {
-            traverseDeclarationList(node, context);
-        } else if (symbol == ENUMERATOR_LIST) {
-            traverseEnumeratorList(node, context);
-        } else if (symbol == FIELD_DECLARATION_LIST) {
-            traverseFieldDeclarationList(node, context);
-        } else if (symbol == INITIALIZER_LIST) {
-            traverseInitializationList(node, context);
-        } else {
-            traverseGeneric(node, context);
+        for(uint32_t i = 0; i < childCount; i++) {
+            ScopeChange scopeChange = ScopeChangeForChild(node, parent, i, context);
+            if (scopeChange == ScopeChange::IncreaseBefore || scopeChange == ScopeChange::Both) {
+                context.scope++;
+            }
+
+            traverse(ts_node_child(node, i), node, context);
+
+            if (scopeChange == ScopeChange::DecreaseAfter || scopeChange == ScopeChange::Both) {
+                context.scope--;
+            }
         }
+
         context.depth--;
+    }
+}
+
+struct DeleteEdit {
+    Range range;
+};
+
+struct InsertEdit {
+    Position position;
+    std::string_view bytes;
+};
+
+using Edit = std::variant<DeleteEdit, InsertEdit>;
+
+struct EditContext {
+    std::vector<Edit> edits;
+    
+    TSPoint previousPoint;
+
+    const Document& document;
+    const Style& style;
+};
+
+void editTraverseChild(TSNode node, EditContext& context) {
+    context.previousPoint = ts_node_end_point(node);
+}
+
+void HandleCompoundChild(TSNode node, uint32_t childIndex, EditContext& context, Style::BraceExistance existance, Style::BracePlacement startPlacement, Style::BracePlacement endPlacement) {
+    TSNode child = ts_node_child(node, childIndex);
+    TSSymbol symbol = ts_node_symbol(child);
+    if (symbol == COMPOUND_STATEMENT) {
+        uint32_t compoundChildCount = ts_node_child_count(child);
+        if (compoundChildCount == 2) {
+            TSNode openBraceNode = ts_node_child(child, 0);
+            TSNode closeBraceNode = ts_node_child(child, 1);
+            TSNode prev = ts_node_child(node, childIndex - 1);
+            TSNode next = ts_node_child(node, childIndex + 1);
+            if (ts_node_is_null(next)) {
+                next = ts_node_next_sibling(node);
+            } 
+            TSPoint openPoint = ts_node_start_point(openBraceNode);
+            TSPoint closePoint = ts_node_start_point(closeBraceNode);
+            TSPoint prevPoint = ts_node_end_point(prev);
+            TSPoint nextPoint = ts_node_is_null(next) ? closePoint : ts_node_start_point(next);
+
+            bool sameLinePrev = openPoint.row == prevPoint.row;
+            bool sameLineInner = openPoint.row == closePoint.row;
+            bool sameLineNext = closePoint.row == nextPoint.row;
+            
+            bool startNewline = startPlacement == Style::BracePlacement::Before || startPlacement == Style::BracePlacement::Surround;
+            bool innerNewline = startPlacement == Style::BracePlacement::Surround || endPlacement == Style::BracePlacement::Surround || endPlacement == Style::BracePlacement::Before;
+            bool endNewline = endPlacement == Style::BracePlacement::After || endPlacement == Style::BracePlacement::Surround;
+
+            bool insertStartNewLine = sameLinePrev && startNewline;
+            bool insertInnerNewLine = sameLineInner && innerNewline;
+            bool insertEndNewLine = sameLineNext && endNewline;
+
+            if (insertStartNewLine) {
+                context.edits.push_back(InsertEdit{.position = Position::EndOf(prev), .bytes = "\n"sv});
+            }
+            if (insertInnerNewLine) {
+                context.edits.push_back(InsertEdit{.position = Position::EndOf(openBraceNode), .bytes = "\n"sv});
+            }
+            if (insertEndNewLine) {
+                context.edits.push_back(InsertEdit{.position = Position::EndOf(closeBraceNode), .bytes = "\n"sv});
+            }            
+        } else if (compoundChildCount == 3 && existance == Style::BraceExistance::Remove) {
+            // delete the open and close braces because there is only one statement and the style says to remove braces if there is only one statement
+            
+            TSNode startBrace = ts_node_child(child, 0);
+            context.edits.push_back(DeleteEdit {.range = Range::Of(startBrace)});
+
+            TSNode endBrace = ts_node_child(child, 2);
+            context.edits.push_back(DeleteEdit {.range = Range::Of(endBrace)});
+        }
+        // else {
+        //     TSNode openBraceNode = ts_node_child(child, 0);
+        //     TSNode openNextNode = ts_node_child(child, 1);
+        //     TSNode closePrevNode = ts_node_child(child, compoundChildCount - 2);
+        //     TSNode closeBraceNode = ts_node_child(child, compoundChildCount - 1);
+        //     TSNode prev = ts_node_child(node, childIndex - 1);
+        //     TSNode next = ts_node_child(node, childIndex + 1);
+
+        //     if (ts_node_is_null(next)) {
+        //         next = ts_node_next_sibling(node);
+        //     } 
+
+        //     TSPoint openPoint = ts_node_start_point(openBraceNode);
+        //     TSPoint closePoint = ts_node_start_point(closeBraceNode);
+        //     TSPoint prevPoint = ts_node_end_point(prev);
+        //     TSPoint nextPoint = ts_node_is_null(next) ? closePoint : ts_node_start_point(next);
+
+        //     bool sameLinePrevOpen = openPoint.row == prevPoint.row;
+        //     bool sameLineNextClose = closePoint.row == nextPoint.row;
+        // }
+    } else if (existance == Style::BraceExistance::Require) {
+        // Insert open and close braces because the style requires they exist but this block doesn't have them
+
+        TSNode prev = ts_node_child(node, childIndex - 1);
+
+        TSPoint prevPoint = ts_node_end_point(prev);
+        TSPoint point = ts_node_start_point(child);
+
+        bool sameLinePrev = prevPoint.row == point.row;
+
+        std::string_view openingBrace;
+        switch(startPlacement) {
+            case Style::BracePlacement::Before: openingBrace = "\n{"sv; break;
+            case Style::BracePlacement::After: {
+                openingBrace = sameLinePrev ? "{\n"sv : "{"sv;
+                break;
+            }
+            case Style::BracePlacement::Surround: {
+                openingBrace = sameLinePrev ? "\n{\n"sv : "\n{"sv;
+                break;
+            }
+            case Style::BracePlacement::Ignore: openingBrace = "{"sv; break;
+            default: openingBrace = "{"sv; break;                
+        }
+
+        context.edits.push_back(InsertEdit{.position = Position::EndOf(prev), .bytes = openingBrace});
+
+        TSNode next = ts_node_child(node, childIndex + 1);
+
+        if (ts_node_is_null(next)) {
+            next = ts_node_next_sibling(node);
+        } 
+        
+        bool sameLineNext = true;
+        if (!ts_node_is_null(next)) {
+            TSPoint nextPoint = ts_node_start_point(next);
+            sameLineNext = nextPoint.row == point.row;
+        }
+
+        std::string_view closingBrace = "\n}\n"sv;
+        switch(endPlacement) {
+            case Style::BracePlacement::Before: closingBrace = "\n}"sv; break;
+            case Style::BracePlacement::After: {
+                closingBrace = sameLineNext ? "}\n"sv : "}"sv;
+                break;
+            }
+            case Style::BracePlacement::Surround: {
+                closingBrace = sameLineNext ? "\n}\n"sv : "\n}"sv;
+                break;
+            }
+            case Style::BracePlacement::Ignore: closingBrace = "}"sv; break;
+            default: closingBrace = "}"sv; break;                
+        }
+
+        context.edits.push_back(InsertEdit{.position = Position::EndOf(node), .bytes = closingBrace});
+    }
+}
+
+void IfStatementEdits(TSNode node, uint32_t childIndex, EditContext& context) {
+    std::string_view fieldName = ChildFieldName(node, childIndex);
+
+    if (fieldName != "consequence" && fieldName != "alternative") {
+        return;
+    }
+
+    HandleCompoundChild(node, childIndex, context, 
+                        context.style.braceExistance.ifStatements,
+                        context.style.bracePlacement.ifStatements.openingBrace,
+                        context.style.bracePlacement.ifStatements.closingBrace);
+}
+
+void editsForChild(TSNode node, uint32_t childIndex, EditContext& context) {
+    TSSymbol symbol = ts_node_symbol(node);
+
+    if (symbol == IF_STATEMENT) {
+         IfStatementEdits(node, childIndex, context);
+    } else if (symbol == WHILE_LOOP) {
+        // WhileLoopScopeChange(node, childIndex, context);
+    } else if (symbol == DO_WHILE_LOOP) {
+        // DoWhileLoopScopeChange(node, childIndex, context);
+    } else if (symbol == COMPOUND_STATEMENT) {
+        // CompoundStatementScopeChange(node, parent, childIndex, context);
+    }
+}
+
+void editTraverse(TSNode node, EditContext& context) {
+    if (ts_node_is_null(node)) {
+        return;
+    }
+
+    uint32_t childCount = ts_node_child_count(node);
+    if (childCount == 0) {
+        editTraverseChild(node, context);
+    } else {
+        for(uint32_t i = 0; i < childCount; i++) {
+            editsForChild(node, i, context);
+            editTraverse(ts_node_child(node, i), context);
+        }
     }
 }
 
@@ -262,6 +476,7 @@ int main() {
 
     style.indentation.indentationAmount = 1;
     style.indentation.whitespace = Style::Whitespace::Tabs;
+    style.braceExistance.ifStatements = Style::BraceExistance::Require;
 
     Document document(inputFileName);
     std::cout << "Input Text: " << document << std::endl;
@@ -269,14 +484,13 @@ int main() {
     std::string text = document.originalContents();
 
     const TSLanguage* cpp = tree_sitter_cpp();
-    TSParser* parser = ts_parser_new();
-    ts_parser_set_language(parser, cpp);
 
     IF_STATEMENT = ts_language_symbol_for_name(cpp, "if_statement", 12, true);
     FOR_LOOP = ts_language_symbol_for_name(cpp, "for_statement", 13, true);
     FOR_RANGE_LOOP = ts_language_symbol_for_name(cpp, "for_range_loop", 14, true);
     WHILE_LOOP = ts_language_symbol_for_name(cpp, "while_statement", 15, true);
     DO_WHILE_LOOP = ts_language_symbol_for_name(cpp, "do_statement", 12, true);
+    FUNCTION_DEFINITION = ts_language_symbol_for_name(cpp, "function_definition", 19, true);
 
     COMPOUND_STATEMENT = ts_language_symbol_for_name(cpp, "compound_statement", 18, true);
     DECLARATION_LIST = ts_language_symbol_for_name(cpp, "declaration_list", 16, true);
@@ -286,9 +500,7 @@ int main() {
 
     ERROR = ts_language_symbol_for_name(cpp, "ERROR", 5, true);
 
-
-    TSTree* tree = ts_parser_parse(parser, nullptr, document.inputReader());
-    TSNode root = ts_tree_root_node(tree);
+    TSNode root = document.root();
 
     if (ts_node_has_error(root)) {
         std::cerr << "There was an error parsing. Skipping formatting." << std::endl;
@@ -305,18 +517,43 @@ int main() {
 
     //std::cout << "Input Text:" << std::endl << text << std::endl;
 
-    Context context {
+    EditContext editContext {
+        .previousPoint = ts_node_start_point(root),
+        .document = document,
+        .style = style,
+    };
+
+    editTraverse(root, editContext);
+
+    size_t editCount = editContext.edits.size();
+    for(size_t index = 0; index < editCount; index++) {
+        Edit& edit = editContext.edits[editCount - index - 1];
+
+        if (std::holds_alternative<DeleteEdit>(edit)) {
+            DeleteEdit d = std::get<DeleteEdit>(edit);
+            document.deleteBytes(d.range);
+        } else if (std::holds_alternative<InsertEdit>(edit)) {
+            InsertEdit i = std::get<InsertEdit>(edit);
+            document.insertBytes(i.position, i.bytes);
+        }
+    }
+
+    std::cout << std::endl << std::endl << "Edited:" << std::endl << document << std::endl;
+
+    root = document.root();
+
+    ScopeContext context {
         .depth = 0,
         .scope = 0,
         .output = output,
+        .previousPosition = Position::StartOf(root),
         .document = document,
-        .previousPoint = ts_node_start_point(root),
         .style = style,
     };
 
     std::cout << std::endl << std::endl;
 
-    traverse(root, context);
+    traverse(root, ts_node_parent(root), context);
 
     output.flush();
     output.close();

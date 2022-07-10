@@ -8,7 +8,20 @@ namespace tree_sitter_format {
 
 struct Style {
     enum class Whitespace { Spaces, Tabs };
+    enum class Indentation { BracesIndented, BodyIndented, BothIndented, None };
+
     struct {
+        Indentation namespaces = Indentation::None;
+        Indentation functionDefinitions = Indentation::BodyIndented;
+        Indentation structDefinitions = Indentation::BodyIndented;
+        Indentation classDefinitions = Indentation::BodyIndented;
+        Indentation ifStatements = Indentation::BodyIndented;
+        Indentation switchStatements = Indentation::BodyIndented;
+        Indentation caseBlocks = Indentation::BodyIndented;
+        Indentation whileLoops = Indentation::BodyIndented;
+        Indentation doWhileLoops = Indentation::BodyIndented;
+        Indentation forLoops = Indentation::BodyIndented;
+
         Whitespace whitespace = Whitespace::Spaces;
         uint32_t indentationAmount = 4;
         uint32_t tabWidth = 4;
@@ -17,21 +30,70 @@ struct Style {
 
     const std::string& indentationString() const;
 
-    enum class LinePlacement { SameLine, NextLine, Ignore };
+    enum class BracePlacement { Before, After, Surround, Ignore };
     struct {
-        LinePlacement namespaceDefinitions = LinePlacement::SameLine;
-        LinePlacement functionDeclarations = LinePlacement::SameLine;
-        LinePlacement functionDefinitions = LinePlacement::SameLine;
-        LinePlacement structDefinitions = LinePlacement::SameLine;
-        LinePlacement classDefinitions = LinePlacement::SameLine;
-        LinePlacement ifStatements = LinePlacement::SameLine;
-        LinePlacement elseStatements = LinePlacement::SameLine;
-        LinePlacement switchStatements = LinePlacement::SameLine;
-        LinePlacement caseBlocks = LinePlacement::SameLine;
-        LinePlacement whileLoops = LinePlacement::SameLine;
-        LinePlacement forLoops = LinePlacement::SameLine;
+        struct {
+            BracePlacement openingBrace = BracePlacement::After;
+            BracePlacement closingBrace = BracePlacement::Surround;
+        } namespaces;
+
+        struct {
+            BracePlacement openingBrace = BracePlacement::After;
+            BracePlacement closingBrace = BracePlacement::Surround;
+        } classes;
+        
+        struct {
+            BracePlacement openingBrace = BracePlacement::After;
+            BracePlacement closingBrace = BracePlacement::Surround;
+        } structs;
+        
+        struct {
+            BracePlacement openingBrace = BracePlacement::After;
+            BracePlacement closingBrace = BracePlacement::Surround;
+        } unions;
+
+        struct {
+            BracePlacement openingBrace = BracePlacement::After;
+            BracePlacement closingBrace = BracePlacement::Surround;
+        } enums;
+
+        struct {
+            BracePlacement openingBrace = BracePlacement::After;
+            BracePlacement closingBrace = BracePlacement::Surround;
+        } functionDefinitions;
+
+        struct {
+            BracePlacement openingBrace = BracePlacement::After;
+            BracePlacement closingBrace = BracePlacement::Surround;
+        } forLoops;
+
+        struct {
+            BracePlacement openingBrace = BracePlacement::After;
+            BracePlacement closingBrace = BracePlacement::Surround;
+        } whileLoops;
+
+        struct {
+            BracePlacement openingBrace = BracePlacement::Surround;
+            BracePlacement closingBrace = BracePlacement::Before;
+        } doWhileLoops;
+
+        struct {
+            BracePlacement openingBrace = BracePlacement::After;
+            BracePlacement closingBrace = BracePlacement::Surround;
+        } ifStatements;
+
+        struct {
+            BracePlacement openingBrace = BracePlacement::After;
+            BracePlacement closingBrace = BracePlacement::Surround;
+        } switchStatements;
+
+        struct {
+            BracePlacement openingBrace = BracePlacement::After;
+            BracePlacement closingBrace = BracePlacement::Surround;
+        } caseStatements;
     } bracePlacement;
 
+    enum class LinePlacement { SameLine, NextLine, Ignore };
     LinePlacement elseKeyword = LinePlacement::SameLine;
 
     enum class BraceExistance { Require, Remove, Ignore };
@@ -49,6 +111,29 @@ struct Style {
             SpacePlacement openingBrace = SpacePlacement::Surround;
             SpacePlacement closingBrace = SpacePlacement::Surround;
         } namespaces;
+
+        struct {
+            SpacePlacement openingBrace = SpacePlacement::Surround;
+            SpacePlacement closingBrace = SpacePlacement::Before;
+        } classes;
+        
+        struct {
+            SpacePlacement openingBrace = SpacePlacement::Surround;
+            SpacePlacement closingBrace = SpacePlacement::Before;
+            SpacePlacement name = SpacePlacement::Before;
+        } structs;
+        
+        struct {
+            SpacePlacement openingBrace = SpacePlacement::Surround;
+            SpacePlacement closingBrace = SpacePlacement::Before;
+            SpacePlacement name = SpacePlacement::Before;
+        } unions;
+
+        struct {
+            SpacePlacement openingBrace = SpacePlacement::Surround;
+            SpacePlacement closingBrace = SpacePlacement::Before;
+            SpacePlacement commas = SpacePlacement::After;
+        } enums;
 
         struct {
             SpacePlacement openingParenthesis = SpacePlacement::None;
