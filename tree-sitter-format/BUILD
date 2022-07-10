@@ -18,6 +18,7 @@ tsf_cc_binary(
 tsf_cc_library(
     name = "traverser",
     hdrs = ["traversers/Traverser.h"],
+    srcs = ["traversers/Traverser.cpp"],
     include_prefix = "tree_sitter_format",
     deps = ["@tree-sitter"],
 )
@@ -30,6 +31,7 @@ tsf_cc_library(
     deps = [
         ":constants",
         ":document",
+        ":traverser",
         ":style",
     ],
 )

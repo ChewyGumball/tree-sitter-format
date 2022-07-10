@@ -1,5 +1,7 @@
 #pragma once
 
+#include <tree_sitter_format/traversers/Traverser.h>
+
 #include <tree_sitter_format/document/Document.h>
 #include <tree_sitter_format/style/Style.h>
 
@@ -14,10 +16,19 @@ struct IndentationContext {
     const Style& style;
 };
 
-struct IndentationTraverser {
-    void visitLeaf(TSNode node, IndentationContext& context);
-    void preVisitChild(TSNode node, uint32_t childIndex, IndentationContext& context);
-    void postVisitChild(TSNode node, uint32_t childIndex, IndentationContext& context);
+class IndentationTraverser : public Traverser {    
+public:
+    IndentationTraverser(const Style& style);
+
+    const std::vector<Edit>& edits() const;
+
+private:
+    IndentationContext context;
+
+protected:
+    void visitLeaf(TSNode node) override;
+    void preVisitChild(TSNode node, uint32_t childIndex) override;
+    void postVisitChild(TSNode node, uint32_t childIndex) override;
 };
 
 }

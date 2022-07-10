@@ -263,9 +263,9 @@ int main() {
         .style = style,
     };
 
-    IndentationTraverser t;
-    Traverse(root, context, t);
-    document.applyEdits(context.edits);
+    IndentationTraverser t(style);
+    t.traverse(root);
+    document.applyEdits(t.edits());
 
     output << document;
 

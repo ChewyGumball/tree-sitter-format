@@ -166,7 +166,22 @@ ScopeChange ScopeChangeForChild(TSNode node, uint32_t childIndex, const Style& s
 }
 
 namespace tree_sitter_format {
-void IndentationTraverser::visitLeaf(TSNode node, IndentationContext& context) {
+    
+IndentationTraverser::IndentationTraverser(const Style& style) : context(IndentationContext {
+        .scope = 0,
+        .previousPosition = Position {
+            .location = TSPoint { .row = 0, .column = 0 },
+            .byteOffset = 0,
+        },
+        .style = style,
+    }) {}
+
+    
+const std::vector<Edit>& IndentationTraverser::edits() const {
+    return context.edits;
+}
+
+void IndentationTraverser::visitLeaf(TSNode node) {
     if (!context.style.indentation.reindent) {
         return;
     }
@@ -193,7 +208,7 @@ void IndentationTraverser::visitLeaf(TSNode node, IndentationContext& context) {
     context.previousPosition = Position::EndOf(node);
 }
 
-void IndentationTraverser::preVisitChild(TSNode node, uint32_t childIndex, IndentationContext& context) {
+void IndentationTraverser::preVisitChild(TSNode node, uint32_t childIndex) {
     ScopeChange change = ScopeChangeForChild(node, childIndex, context.style);
 
     if (change == ScopeChange::IncreaseBefore || change == ScopeChange::Both) {
@@ -201,7 +216,7 @@ void IndentationTraverser::preVisitChild(TSNode node, uint32_t childIndex, Inden
     }
 }
 
-void IndentationTraverser::postVisitChild(TSNode node, uint32_t childIndex, IndentationContext& context) {
+void IndentationTraverser::postVisitChild(TSNode node, uint32_t childIndex) {
     ScopeChange change = ScopeChangeForChild(node, childIndex, context.style);
 
     if (change == ScopeChange::DecreaseAfter || change == ScopeChange::Both) {
