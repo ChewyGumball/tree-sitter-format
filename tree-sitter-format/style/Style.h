@@ -5,6 +5,10 @@
 
 namespace tree_sitter_format {
 
+struct BraceStyle {
+
+};
+
 
 struct Style {
     enum class Whitespace { Spaces, Tabs };
@@ -31,79 +35,91 @@ struct Style {
     std::string_view indentationString() const;
 
     enum class BracePlacement { Before, After, Surround, Ignore };
+    enum class BraceExistance { Require, Remove, Ignore };
+    struct Braces {
+        BracePlacement openingBrace;
+        BracePlacement closingBrace;
+        BraceExistance existance;
+    };
+
     struct {
-        struct {
-            BracePlacement openingBrace = BracePlacement::After;
-            BracePlacement closingBrace = BracePlacement::Surround;
-        } namespaces;
+        // Existance is ALWAYS required for these ones and shouldn't be modified
+        Braces namespaces = {
+            .openingBrace = BracePlacement::After,
+            .closingBrace = BracePlacement::Surround,
+            .existance = BraceExistance::Require,
+        };
 
-        struct {
-            BracePlacement openingBrace = BracePlacement::After;
-            BracePlacement closingBrace = BracePlacement::Surround;
-        } classes;
+        Braces classes = {
+            .openingBrace = BracePlacement::After,
+            .closingBrace = BracePlacement::Surround,
+            .existance = BraceExistance::Require,
+        };
         
-        struct {
-            BracePlacement openingBrace = BracePlacement::After;
-            BracePlacement closingBrace = BracePlacement::Surround;
-        } structs;
+        Braces structs = {
+            .openingBrace = BracePlacement::After,
+            .closingBrace = BracePlacement::Surround,
+            .existance = BraceExistance::Require,
+        };
+
+        Braces unions = {
+            .openingBrace = BracePlacement::After,
+            .closingBrace = BracePlacement::Surround,
+            .existance = BraceExistance::Require,
+        };
         
-        struct {
-            BracePlacement openingBrace = BracePlacement::After;
-            BracePlacement closingBrace = BracePlacement::Surround;
-        } unions;
-
-        struct {
-            BracePlacement openingBrace = BracePlacement::After;
-            BracePlacement closingBrace = BracePlacement::Surround;
-        } enums;
-
-        struct {
-            BracePlacement openingBrace = BracePlacement::After;
-            BracePlacement closingBrace = BracePlacement::Surround;
-        } functionDefinitions;
-
-        struct {
-            BracePlacement openingBrace = BracePlacement::After;
-            BracePlacement closingBrace = BracePlacement::Surround;
-        } forLoops;
-
-        struct {
-            BracePlacement openingBrace = BracePlacement::After;
-            BracePlacement closingBrace = BracePlacement::Surround;
-        } whileLoops;
-
-        struct {
-            BracePlacement openingBrace = BracePlacement::Surround;
-            BracePlacement closingBrace = BracePlacement::Before;
-        } doWhileLoops;
-
-        struct {
-            BracePlacement openingBrace = BracePlacement::After;
-            BracePlacement closingBrace = BracePlacement::Surround;
-        } ifStatements;
-
-        struct {
-            BracePlacement openingBrace = BracePlacement::After;
-            BracePlacement closingBrace = BracePlacement::Surround;
-        } switchStatements;
-
-        struct {
-            BracePlacement openingBrace = BracePlacement::After;
-            BracePlacement closingBrace = BracePlacement::Surround;
-        } caseStatements;
-    } bracePlacement;
+        Braces enums = {
+            .openingBrace = BracePlacement::After,
+            .closingBrace = BracePlacement::Surround,
+            .existance = BraceExistance::Require,
+        };
+        
+        Braces functionDefinitions = {
+            .openingBrace = BracePlacement::After,
+            .closingBrace = BracePlacement::Surround,
+            .existance = BraceExistance::Require,
+        };
+        
+        Braces switchStatements = {
+            .openingBrace = BracePlacement::After,
+            .closingBrace = BracePlacement::Surround,
+            .existance = BraceExistance::Require,
+        };
+        
+        // Existance is optional for these ones
+        Braces forLoops = {
+            .openingBrace = BracePlacement::After,
+            .closingBrace = BracePlacement::Surround,
+            .existance = BraceExistance::Require,
+        };
+        
+        Braces whileLoops = {
+            .openingBrace = BracePlacement::After,
+            .closingBrace = BracePlacement::Surround,
+            .existance = BraceExistance::Require,
+        };
+        
+        Braces doWhileLoops = {
+            .openingBrace = BracePlacement::After,
+            .closingBrace = BracePlacement::Surround,
+            .existance = BraceExistance::Require,
+        };
+        
+        Braces ifStatements = {
+            .openingBrace = BracePlacement::After,
+            .closingBrace = BracePlacement::Surround,
+            .existance = BraceExistance::Require,
+        };
+        
+        Braces caseStatements = {
+            .openingBrace = BracePlacement::After,
+            .closingBrace = BracePlacement::Surround,
+            .existance = BraceExistance::Require,
+        };
+    } braces;
 
     enum class LinePlacement { SameLine, NextLine, Ignore };
     LinePlacement elseKeyword = LinePlacement::SameLine;
-
-    enum class BraceExistance { Require, Remove, Ignore };
-    struct {
-        BraceExistance ifStatements = BraceExistance::Require;
-        BraceExistance switchStatements = BraceExistance::Require;
-        BraceExistance caseBlocks = BraceExistance::Require;
-        BraceExistance whileLoops = BraceExistance::Require;
-        BraceExistance forLoops = BraceExistance::Require;
-    } braceExistance;
 
     enum class SpacePlacement { None, Before, After, Surround, Ignore };
     struct {

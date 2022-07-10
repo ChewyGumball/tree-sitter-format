@@ -14,6 +14,8 @@ inline TSSymbol FOR_RANGE_LOOP = ts_language_symbol_for_name(tree_sitter_cpp(), 
 inline TSSymbol WHILE_LOOP = ts_language_symbol_for_name(tree_sitter_cpp(), "while_statement", 15, true);
 inline TSSymbol DO_WHILE_LOOP = ts_language_symbol_for_name(tree_sitter_cpp(), "do_statement", 12, true);
 inline TSSymbol FUNCTION_DEFINITION = ts_language_symbol_for_name(tree_sitter_cpp(), "function_definition", 19, true);
+inline TSSymbol SWITCH_STATEMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "switch_statement", 16, true);
+inline TSSymbol CASE_STATEMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "case_statement", 14, true);
 
 // Regular code block
 inline TSSymbol COMPOUND_STATEMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "compound_statement", 18, true);

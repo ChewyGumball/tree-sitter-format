@@ -4,6 +4,7 @@ tsf_cc_binary(
     name = "tree-sitter-format",
     srcs = ["main.cpp"],
     deps = [
+        ":bracket_existance_traverser",
         ":indentation_traverser",
         ":constants",
         ":configuration",
@@ -27,6 +28,19 @@ tsf_cc_library(
     name = "indentation_traverser",
     hdrs = ["traversers/IndentationTraverser.h"],
     srcs = ["traversers/IndentationTraverser.cpp"],
+    include_prefix = "tree_sitter_format",
+    deps = [
+        ":constants",
+        ":document",
+        ":traverser",
+        ":style",
+    ],
+)
+
+tsf_cc_library(
+    name = "bracket_existance_traverser",
+    hdrs = ["traversers/BracketExistanceTraverser.h"],
+    srcs = ["traversers/BracketExistanceTraverser.cpp"],
     include_prefix = "tree_sitter_format",
     deps = [
         ":constants",
