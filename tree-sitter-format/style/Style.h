@@ -220,6 +220,7 @@ struct Style {
             SpacePlacement closingBrace = SpacePlacement::Before;
         } caseStatements;
 
+        SpacePlacement binaryOperator = SpacePlacement::Surround;
 
         bool respace = true;
         bool trimTrailing = true;

@@ -57,6 +57,7 @@ tsf_cc_library(
     srcs = ["traversers/SpaceTraverser.cpp"],
     include_prefix = "tree_sitter_format",
     deps = [
+        ":constants",
         ":document",
         ":traverser",
         ":style",

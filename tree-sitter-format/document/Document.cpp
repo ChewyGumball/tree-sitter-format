@@ -27,6 +27,15 @@ const TSLanguage* tree_sitter_cpp(void);
 }
 
 namespace tree_sitter_format {
+    
+
+    std::strong_ordering operator<=>(const Position& lhs, const Position& rhs) {
+        if (lhs.location.row == rhs.location.row) {
+            return lhs.location.column <=> rhs.location.column;
+        } else {
+            return lhs.location.row <=> rhs.location.row;
+        }
+    }
 
     bool operator<(const Edit& lhs, const Edit& rhs) {
             bool aIsDelete = std::holds_alternative<DeleteEdit>(lhs);

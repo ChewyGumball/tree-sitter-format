@@ -1,5 +1,6 @@
 #pragma once
 
+#include <compare>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -30,6 +31,8 @@ struct Position {
     }
 };
 
+std::strong_ordering operator<=>(const Position& lhs, const Position& rhs);
+
 struct Range {
     Position start;
     Position end;
@@ -46,6 +49,12 @@ struct Range {
         return Range {
             .start = Position::EndOf(start),
             .end = Position::StartOf(end),
+        };
+    }
+    static Range Between(Position start, Position end) {
+        return Range {
+            .start = start,
+            .end = end,
         };
     }
 };
