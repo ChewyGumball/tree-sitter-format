@@ -81,9 +81,13 @@ ScopeChange CompoundStatementScopeChange(TSNode node, uint32_t childIndex, const
         indentation = style.indentation.doWhileLoops;
     } else if (parentSymbol == FUNCTION_DEFINITION) {
         indentation = style.indentation.functionDefinitions;
+    } else if (parentSymbol == SWITCH_STATEMENT) {
+        indentation = style.indentation.switchStatements;
+    } else {
+        indentation = style.indentation.genericScope;
     }
-    // TODO: add case blocks
-    // TODO: add switch blocks
+    // TODO: add case blocks, need to check if a single case body statement,
+    //  otherwise its just a generic scope.
 
     // We are the opening brace
     if (childIndex == 0) {
@@ -167,12 +171,13 @@ ScopeChange ScopeChangeForChild(TSNode node, uint32_t childIndex, const Style& s
 
 namespace tree_sitter_format {
     
-IndentationTraverser::IndentationTraverser(const Style& style) : context(IndentationContext {
+IndentationTraverser::IndentationTraverser(const Document& document, const Style& style) : context(IndentationContext {
         .scope = 0,
         .previousPosition = Position {
             .location = TSPoint { .row = 0, .column = 0 },
             .byteOffset = 0,
         },
+        .document = document,
         .style = style,
     }) {}
 
@@ -192,16 +197,13 @@ void IndentationTraverser::visitLeaf(TSNode node) {
     uint32_t currentRow = position.location.row;
 
     if (previousRow != currentRow) {
-        // Add the new lines
-        for(uint32_t i = previousRow; i < currentRow; i++) {
-            context.edits.push_back(InsertEdit{.position = context.previousPosition, .bytes = "\n"sv});
-        }
+        Range preceedingWhitespace = context.document.toPreviousNewLine(position);
 
         // Delete the previous white space
-        context.edits.push_back(DeleteEdit{.range = Range{.start = context.previousPosition, .end = position}});
+        context.edits.push_back(DeleteEdit{.range = preceedingWhitespace});
 
         for(uint32_t i = 0; i < context.scope; i++) {
-            context.edits.push_back(InsertEdit{.position = position, .bytes = context.style.indentationString()});
+            context.edits.push_back(InsertEdit{.position = preceedingWhitespace.start, .bytes = context.style.indentationString()});
         }
     }
 

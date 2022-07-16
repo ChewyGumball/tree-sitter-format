@@ -61,6 +61,8 @@ struct InsertEdit {
 
 using Edit = std::variant<DeleteEdit, InsertEdit>;
 
+bool operator<(const Edit& lhs, const Edit& rhs);
+
 
 using TSParserDeleter = decltype(&ts_parser_delete);
 using TSTreeDeleter = decltype(&ts_tree_delete);
@@ -97,7 +99,7 @@ public:
     void insertBytes(Position position, std::string_view bytes);
     void deleteBytes(Range range);
 
-    void applyEdits(const std::vector<Edit>& edits);
+    void applyEdits(std::vector<Edit> edits);
 
     const std::string& originalContents() const;
     const std::string_view originalContentsAt(Range range) const;
@@ -105,7 +107,9 @@ public:
     std::string contentsAt(Range range) const;
     char characterAt(uint32_t bytePosition) const;
 
-    void reparse();
+    Range toNextNewLine(Position start) const;
+    Range toPreviousNewLine(Position end) const;
+
     TSNode root() const;
 
     TSInput inputReader();

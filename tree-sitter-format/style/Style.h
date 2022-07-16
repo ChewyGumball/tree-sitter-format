@@ -25,6 +25,7 @@ struct Style {
         Indentation whileLoops = Indentation::BodyIndented;
         Indentation doWhileLoops = Indentation::BodyIndented;
         Indentation forLoops = Indentation::BodyIndented;
+        Indentation genericScope = Indentation::BodyIndented;
 
         Whitespace whitespace = Whitespace::Spaces;
         uint32_t indentationAmount = 4;
@@ -34,86 +35,86 @@ struct Style {
 
     std::string_view indentationString() const;
 
-    enum class BracePlacement { Before, After, Surround, Ignore };
+    enum class NewlinePlacement { Before, After, Surround, Ignore };
     enum class BraceExistance { Require, Remove, Ignore };
     struct Braces {
-        BracePlacement openingBrace;
-        BracePlacement closingBrace;
+        NewlinePlacement openingBrace;
+        NewlinePlacement closingBrace;
         BraceExistance existance;
     };
 
     struct {
         // Existance is ALWAYS required for these ones and shouldn't be modified
         Braces namespaces = {
-            .openingBrace = BracePlacement::After,
-            .closingBrace = BracePlacement::Surround,
+            .openingBrace = NewlinePlacement::After,
+            .closingBrace = NewlinePlacement::Surround,
             .existance = BraceExistance::Require,
         };
 
         Braces classes = {
-            .openingBrace = BracePlacement::After,
-            .closingBrace = BracePlacement::Surround,
+            .openingBrace = NewlinePlacement::After,
+            .closingBrace = NewlinePlacement::Surround,
             .existance = BraceExistance::Require,
         };
         
         Braces structs = {
-            .openingBrace = BracePlacement::After,
-            .closingBrace = BracePlacement::Surround,
+            .openingBrace = NewlinePlacement::After,
+            .closingBrace = NewlinePlacement::Surround,
             .existance = BraceExistance::Require,
         };
 
         Braces unions = {
-            .openingBrace = BracePlacement::After,
-            .closingBrace = BracePlacement::Surround,
+            .openingBrace = NewlinePlacement::After,
+            .closingBrace = NewlinePlacement::Surround,
             .existance = BraceExistance::Require,
         };
         
         Braces enums = {
-            .openingBrace = BracePlacement::After,
-            .closingBrace = BracePlacement::Surround,
+            .openingBrace = NewlinePlacement::After,
+            .closingBrace = NewlinePlacement::Surround,
             .existance = BraceExistance::Require,
         };
         
         Braces functionDefinitions = {
-            .openingBrace = BracePlacement::After,
-            .closingBrace = BracePlacement::Surround,
+            .openingBrace = NewlinePlacement::After,
+            .closingBrace = NewlinePlacement::Surround,
             .existance = BraceExistance::Require,
         };
         
         Braces switchStatements = {
-            .openingBrace = BracePlacement::After,
-            .closingBrace = BracePlacement::Surround,
+            .openingBrace = NewlinePlacement::After,
+            .closingBrace = NewlinePlacement::Surround,
             .existance = BraceExistance::Require,
         };
         
         // Existance is optional for these ones
         Braces forLoops = {
-            .openingBrace = BracePlacement::After,
-            .closingBrace = BracePlacement::Surround,
+            .openingBrace = NewlinePlacement::After,
+            .closingBrace = NewlinePlacement::Surround,
             .existance = BraceExistance::Require,
         };
         
         Braces whileLoops = {
-            .openingBrace = BracePlacement::After,
-            .closingBrace = BracePlacement::Surround,
+            .openingBrace = NewlinePlacement::After,
+            .closingBrace = NewlinePlacement::Surround,
             .existance = BraceExistance::Require,
         };
         
         Braces doWhileLoops = {
-            .openingBrace = BracePlacement::After,
-            .closingBrace = BracePlacement::Surround,
+            .openingBrace = NewlinePlacement::After,
+            .closingBrace = NewlinePlacement::Surround,
             .existance = BraceExistance::Require,
         };
         
         Braces ifStatements = {
-            .openingBrace = BracePlacement::After,
-            .closingBrace = BracePlacement::Surround,
+            .openingBrace = NewlinePlacement::After,
+            .closingBrace = NewlinePlacement::Surround,
             .existance = BraceExistance::Require,
         };
         
         Braces caseStatements = {
-            .openingBrace = BracePlacement::After,
-            .closingBrace = BracePlacement::Surround,
+            .openingBrace = NewlinePlacement::After,
+            .closingBrace = NewlinePlacement::Surround,
             .existance = BraceExistance::Require,
         };
     } braces;
@@ -221,6 +222,7 @@ struct Style {
 
 
         bool respace = true;
+        bool trimTrailing = true;
     } spacing;
 };
 

@@ -39,9 +39,9 @@ void HandleCompoundChild(TSNode node, uint32_t childIndex, BracketExistanceConte
             bool sameLineInner = openPoint.row == closePoint.row;
             bool sameLineNext = closePoint.row == nextPoint.row;
             
-            bool startNewline = style.openingBrace == Style::BracePlacement::Before || style.openingBrace == Style::BracePlacement::Surround;
-            bool innerNewline = style.openingBrace == Style::BracePlacement::Surround || style.closingBrace == Style::BracePlacement::Surround || style.closingBrace == Style::BracePlacement::Before;
-            bool endNewline = style.closingBrace == Style::BracePlacement::After || style.closingBrace == Style::BracePlacement::Surround;
+            bool startNewline = style.openingBrace == Style::NewlinePlacement::Before || style.openingBrace == Style::NewlinePlacement::Surround;
+            bool innerNewline = style.openingBrace == Style::NewlinePlacement::Surround || style.closingBrace == Style::NewlinePlacement::Surround || style.closingBrace == Style::NewlinePlacement::Before;
+            bool endNewline = style.closingBrace == Style::NewlinePlacement::After || style.closingBrace == Style::NewlinePlacement::Surround;
 
             bool insertStartNewLine = sameLinePrev && startNewline;
             bool removeStartNewLine = !sameLinePrev && !startNewline;
@@ -100,10 +100,10 @@ void HandleCompoundChild(TSNode node, uint32_t childIndex, BracketExistanceConte
             bool sameLinePrevClose = closePrevPoint.row == closePoint.row;
             bool sameLineNextClose = closePoint.row == nextPoint.row;
             
-            bool startNewlineBefore = style.openingBrace == Style::BracePlacement::Before || style.openingBrace == Style::BracePlacement::Surround;
-            bool startNewlineAfter = style.openingBrace == Style::BracePlacement::After || style.openingBrace == Style::BracePlacement::Surround;
-            bool endNewlineBefore = style.closingBrace == Style::BracePlacement::Before || style.closingBrace == Style::BracePlacement::Surround;
-            bool endNewlineAfter = style.closingBrace == Style::BracePlacement::After || style.closingBrace == Style::BracePlacement::Surround;
+            bool startNewlineBefore = style.openingBrace == Style::NewlinePlacement::Before || style.openingBrace == Style::NewlinePlacement::Surround;
+            bool startNewlineAfter = style.openingBrace == Style::NewlinePlacement::After || style.openingBrace == Style::NewlinePlacement::Surround;
+            bool endNewlineBefore = style.closingBrace == Style::NewlinePlacement::Before || style.closingBrace == Style::NewlinePlacement::Surround;
+            bool endNewlineAfter = style.closingBrace == Style::NewlinePlacement::After || style.closingBrace == Style::NewlinePlacement::Surround;
 
             bool insertStartNewLineBefore = sameLinePrevOpen && startNewlineBefore;
             bool removeStartNewLineBefore = !sameLinePrevOpen && !startNewlineBefore;
@@ -151,16 +151,16 @@ void HandleCompoundChild(TSNode node, uint32_t childIndex, BracketExistanceConte
 
         std::string_view openingBrace;
         switch(style.openingBrace) {
-            case Style::BracePlacement::Before: openingBrace = "\n{"sv; break;
-            case Style::BracePlacement::After: {
+            case Style::NewlinePlacement::Before: openingBrace = "\n{"sv; break;
+            case Style::NewlinePlacement::After: {
                 openingBrace = sameLinePrev ? "{\n"sv : "{"sv;
                 break;
             }
-            case Style::BracePlacement::Surround: {
+            case Style::NewlinePlacement::Surround: {
                 openingBrace = sameLinePrev ? "\n{\n"sv : "\n{"sv;
                 break;
             }
-            case Style::BracePlacement::Ignore: openingBrace = "{"sv; break;
+            case Style::NewlinePlacement::Ignore: openingBrace = "{"sv; break;
             default: openingBrace = "{"sv; break;                
         }
 
@@ -180,16 +180,16 @@ void HandleCompoundChild(TSNode node, uint32_t childIndex, BracketExistanceConte
 
         std::string_view closingBrace = "\n}\n"sv;
         switch(style.closingBrace) {
-            case Style::BracePlacement::Before: closingBrace = "\n}"sv; break;
-            case Style::BracePlacement::After: {
+            case Style::NewlinePlacement::Before: closingBrace = "\n}"sv; break;
+            case Style::NewlinePlacement::After: {
                 closingBrace = sameLineNext ? "}\n"sv : "}"sv;
                 break;
             }
-            case Style::BracePlacement::Surround: {
+            case Style::NewlinePlacement::Surround: {
                 closingBrace = sameLineNext ? "\n}\n"sv : "\n}"sv;
                 break;
             }
-            case Style::BracePlacement::Ignore: closingBrace = "}"sv; break;
+            case Style::NewlinePlacement::Ignore: closingBrace = "}"sv; break;
             default: closingBrace = "}"sv; break;                
         }
 
@@ -249,15 +249,91 @@ void CaseStatementEdits(TSNode node, uint32_t childIndex, BracketExistanceContex
     // Case statements are defined as: ('case' {expression} | 'default) ':' {stuff}+ 
     // so we need to find where the ':' is, and everything after that is what would be the
     // target of our brace work.
+    const Style::Braces& style = context.style.braces.caseStatements;
 
-    std::string_view fieldName = ChildFieldName(node, childIndex);
+    std::string_view secondChildFieldName = ChildFieldName(node, 1);
+    bool isDefaultCase = secondChildFieldName != "value";
+    
+    uint32_t firstBodyStatement = isDefaultCase ? 2 : 3;
+    uint32_t lastChildIndex = ts_node_child_count(node) - 1;
 
-    if (fieldName != "body") {
-        return;
+    bool singleBodyStatement = firstBodyStatement == lastChildIndex;
+
+    // If there is only one child after the colon, we can treat it just like a loop body.
+    if (singleBodyStatement) {
+        if (childIndex == lastChildIndex) {
+            HandleCompoundChild(node, childIndex, context, style);
+        }
+    } else {
+        // If existance is remove, well, we don't have a compound statement, so theres nothing to remove.
+        // If existance is ignore, well, don't do anything.
+        // If existance is require, we need to add braces here because its not a single compound statement,
+        // and therefore the braces don't exist.
+        if (style.existance == Style::BraceExistance::Require) {
+
+            if (childIndex == firstBodyStatement) {
+                TSNode prev = ts_node_child(node, childIndex - 1);
+                TSNode child = ts_node_child(node, childIndex);
+
+                TSPoint prevPoint = ts_node_end_point(prev);
+                TSPoint point = ts_node_start_point(child);
+
+                bool sameLinePrev = prevPoint.row == point.row;                    
+
+                std::string_view openingBrace;
+                switch(style.openingBrace) {
+                    case Style::NewlinePlacement::Before: openingBrace = "\n{"sv; break;
+                    case Style::NewlinePlacement::After: {
+                        openingBrace = sameLinePrev ? "{\n"sv : "{"sv;
+                        break;
+                    }
+                    case Style::NewlinePlacement::Surround: {
+                        openingBrace = sameLinePrev ? "\n{\n"sv : "\n{"sv;
+                        break;
+                    }
+                    case Style::NewlinePlacement::Ignore: openingBrace = "{"sv; break;
+                    default: openingBrace = "{"sv; break;                
+                }
+
+                context.edits.push_back(InsertEdit{.position = Position::EndOf(prev), .bytes = openingBrace});
+            } else if (childIndex == lastChildIndex) {
+                TSNode child = ts_node_child(node, childIndex);            
+                TSNode next = ts_node_child(node, childIndex + 1);
+
+                TSPoint point = ts_node_start_point(child);
+
+                if (ts_node_is_null(next)) {
+                    next = ts_node_next_sibling(node);
+                } 
+                
+                
+                bool sameLineNext = true;
+                if (!ts_node_is_null(next)) {
+                    TSPoint nextPoint = ts_node_start_point(next);
+                    sameLineNext = nextPoint.row == point.row;
+                }
+                
+                std::string_view closingBrace = "\n}\n"sv;
+                switch(style.closingBrace) {
+                    case Style::NewlinePlacement::Before: closingBrace = "\n}"sv; break;
+                    case Style::NewlinePlacement::After: {
+                        closingBrace = sameLineNext ? "}\n"sv : "}"sv;
+                        break;
+                    }
+                    case Style::NewlinePlacement::Surround: {
+                        closingBrace = sameLineNext ? "\n}\n"sv : "\n}"sv;
+                        break;
+                    }
+                    case Style::NewlinePlacement::Ignore: closingBrace = "}"sv; break;
+                    default: closingBrace = "}"sv; break;                
+                }
+
+                context.edits.push_back(InsertEdit{.position = Position::EndOf(child), .bytes = closingBrace});
+            }
+        }
     }
-
-    HandleCompoundChild(node, childIndex, context, context.style.braces.forLoops);
 }
+
 void SwitchStatementEdits(TSNode node, uint32_t childIndex, BracketExistanceContext& context) {
     std::string_view fieldName = ChildFieldName(node, childIndex);
 
@@ -291,6 +367,8 @@ void BracketExistanceTraverser::preVisitChild(TSNode node, uint32_t childIndex) 
         ForRangeLoopEdits(node, childIndex, context);
     } else if (symbol == SWITCH_STATEMENT) {
         SwitchStatementEdits(node, childIndex, context);
+    } else if (symbol == CASE_STATEMENT) {
+        CaseStatementEdits(node, childIndex, context);
     }
 }
 void BracketExistanceTraverser::postVisitChild([[maybe_unused]] TSNode node, [[maybe_unused]] uint32_t childIndex) { }

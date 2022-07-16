@@ -6,9 +6,7 @@
 #include <tree_sitter_format/style/Style.h>
 
 namespace tree_sitter_format {
-
-struct IndentationContext {
-    uint32_t scope;
+struct SpaceContext {
     Position previousPosition;
 
     std::vector<Edit> edits;
@@ -17,19 +15,18 @@ struct IndentationContext {
     const Style& style;
 };
 
-class IndentationTraverser : public Traverser {    
+class SpaceTraverser : public Traverser {    
 public:
-    IndentationTraverser(const Document& document, const Style& style);
+    SpaceTraverser(const Document& document, const Style& style);
 
     const std::vector<Edit>& edits() const;
 
 private:
-    IndentationContext context;
+    SpaceContext context;
 
 protected:
     void visitLeaf(TSNode node) override;
     void preVisitChild(TSNode node, uint32_t childIndex) override;
     void postVisitChild(TSNode node, uint32_t childIndex) override;
 };
-
 }

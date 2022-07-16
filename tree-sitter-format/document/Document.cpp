@@ -1,5 +1,7 @@
 #include <tree_sitter_format/document/Document.h>
 
+#include <algorithm>
+
 #include <fstream>
 #include <sstream>
 
@@ -13,6 +15,11 @@ namespace {
 
         return s.str();
     }
+
+    struct EditStartVisit {
+        uint32_t operator()(const tree_sitter_format::DeleteEdit& d) { return d.range.start.byteOffset; }
+        uint32_t operator()(const tree_sitter_format::InsertEdit& i) { return i.position.byteOffset; }
+    };
 }
 
 extern "C" {
@@ -20,6 +27,22 @@ const TSLanguage* tree_sitter_cpp(void);
 }
 
 namespace tree_sitter_format {
+
+    bool operator<(const Edit& lhs, const Edit& rhs) {
+            bool aIsDelete = std::holds_alternative<DeleteEdit>(lhs);
+            bool bIsDelete = std::holds_alternative<DeleteEdit>(rhs);
+
+            uint32_t aStart = std::visit(EditStartVisit(), lhs);            
+            uint32_t bStart = std::visit(EditStartVisit(), rhs);
+
+            if (aStart == bStart && aIsDelete && !bIsDelete) {
+                return true;
+            } else {
+                return aStart > bStart;
+            }
+    }
+
+
     Document::Location Document::findByteLocation(uint32_t position) const {
         assert(position < length);
 
@@ -162,11 +185,10 @@ namespace tree_sitter_format {
         // TODO delete old tree or no?
     }
     
-    void Document::applyEdits(const std::vector<Edit>& edits) {
-        size_t editCount = edits.size();
-        for(size_t index = 0; index < editCount; index++) {
-            const Edit& edit = edits[editCount - index - 1];
+    void Document::applyEdits(std::vector<Edit> edits) {
+        std::ranges::sort(edits);
 
+        for(const Edit& edit : edits) {
             if (std::holds_alternative<DeleteEdit>(edit)) {
                 const DeleteEdit& d = std::get<DeleteEdit>(edit);
                 deleteBytes(d.range);
@@ -175,7 +197,6 @@ namespace tree_sitter_format {
                 insertBytes(i.position, i.bytes);
             }
         }
-
     }
 
     const std::string& Document::originalContents() const {
@@ -219,6 +240,107 @@ namespace tree_sitter_format {
     char Document::characterAt(uint32_t bytePosition) const {
         Location location = findByteLocation(bytePosition);
         return elements[location.index][location.offset];
+    }
+
+    
+    Range Document::toNextNewLine(Position start) const {
+        Location location = findByteLocation(start.byteOffset);
+
+        static constexpr char8_t UTF8ContinuationMask = 0b11000000;
+        static constexpr char8_t UTF8ContinuationValue = 0b10000000;
+
+        uint32_t column = start.location.column;
+        uint32_t byteOffset = start.byteOffset;
+
+        for (size_t index = location.index; index < elements.size(); index++) {
+            size_t startOffset = index == location.index ? location.offset : 0;
+
+            for (size_t offset = startOffset; offset < elements[index].size(); offset++) {
+                char character = elements[index][offset];
+
+                char masked = character & UTF8ContinuationMask;
+                bool isContinuation = masked == UTF8ContinuationValue;
+
+                if (!isContinuation) {
+                    if (character == '\r' || character == '\n') {
+                        Position newLinePosition {
+                            .location = TSPoint {
+                                .row = start.location.row,
+                                .column = column,
+                            },
+                            .byteOffset = byteOffset,
+                        };
+
+                        return Range {
+                            .start = start,
+                            .end = newLinePosition,
+                        };
+                    }
+
+                    column++;
+                }
+                byteOffset++;
+            }
+        }
+        
+        Position endOfFilePosition {
+            .location = TSPoint {
+                .row = start.location.row,
+                .column = column,
+            },
+            .byteOffset = byteOffset,
+        };
+
+        return Range {
+            .start = start,
+            .end = endOfFilePosition,
+        };
+    }
+
+    
+    Range Document::toPreviousNewLine(Position end) const {
+        Location location = findByteLocation(end.byteOffset);
+
+        static constexpr char8_t UTF8ContinuationMask = 0b11000000;
+        static constexpr char8_t UTF8ContinuationValue = 0b10000000;
+
+        uint32_t column = end.location.column;
+        uint32_t byteOffset = end.byteOffset;
+
+        while (column > 0) {
+            char character = elements[location.index][location.offset];
+
+            char masked = character & UTF8ContinuationMask;
+            bool isContinuation = masked == UTF8ContinuationValue;
+
+            if (!isContinuation) {
+                column--;
+            }
+            byteOffset--;
+            
+            if (location.offset == 0) {
+                if (location.index > 0) {
+                    location.index--;
+                    location.offset = elements[location.index].size() - 1;
+                }
+                else {
+                    assert(column == 0);
+                }
+            }
+        }
+        
+        Position start {
+            .location = TSPoint {
+                .row = end.location.row,
+                .column = column,
+            },
+            .byteOffset = byteOffset,
+        };
+
+        return Range {
+            .start = start,
+            .end = end,
+        };
     }
     
     TSNode Document::root() const {
