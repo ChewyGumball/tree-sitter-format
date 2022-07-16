@@ -68,6 +68,7 @@ using TSParserDeleter = decltype(&ts_parser_delete);
 using TSTreeDeleter = decltype(&ts_tree_delete);
 
 class Document {
+private:
     std::string original;
     std::vector<std::string_view> elements;
     size_t length;
@@ -89,15 +90,12 @@ class Document {
 
     static const char* Read(void* payload, uint32_t byte_index, TSPoint position, uint32_t *bytes_read);
 
+    void insertBytes(Position position, std::string_view bytes);
+    void deleteBytes(Range range);
+
 public:
     Document(const std::filesystem::path& file);
     Document(const std::string&& contents);
-
-    void insertBefore(TSNode node, std::string_view bytes);
-    void insertAfter(TSNode node, std::string_view bytes);
-
-    void insertBytes(Position position, std::string_view bytes);
-    void deleteBytes(Range range);
 
     void applyEdits(std::vector<Edit> edits);
 

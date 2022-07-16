@@ -108,23 +108,6 @@ namespace tree_sitter_format {
         tree.reset(ts_parser_parse(parser.get(), nullptr, inputReader()));
     }
 
-    void Document::insertBefore(TSNode node, std::string_view bytes){
-        Position position {
-            .location = ts_node_start_point(node),
-            .byteOffset = ts_node_start_byte(node),
-        };
-
-        insertBytes(position, bytes);
-    }
-    void Document::insertAfter(TSNode node, std::string_view bytes){
-        Position position {
-            .location = ts_node_end_point(node),
-            .byteOffset = ts_node_end_byte(node),
-        };
-        
-        insertBytes(position, bytes);
-    }
-
     void Document::insertBytes(Position position, std::string_view bytes) {
         size_t insertPosition = splitAtPosition(position.byteOffset);
         elements.insert(elements.begin() + insertPosition, bytes);
@@ -144,8 +127,6 @@ namespace tree_sitter_format {
         };
 
         ts_tree_edit(tree.get(), &edit);
-        tree.reset(ts_parser_parse(parser.get(), tree.release(), inputReader()));
-        // TODO delete old tree or no?
     }
 
     void Document::deleteBytes(Range range) {
@@ -181,8 +162,6 @@ namespace tree_sitter_format {
         };
 
         ts_tree_edit(tree.get(), &edit);
-        tree.reset(ts_parser_parse(parser.get(), tree.release(), inputReader()));
-        // TODO delete old tree or no?
     }
     
     void Document::applyEdits(std::vector<Edit> edits) {
@@ -197,6 +176,9 @@ namespace tree_sitter_format {
                 insertBytes(i.position, i.bytes);
             }
         }
+        
+        tree.reset(ts_parser_parse(parser.get(), tree.release(), inputReader()));
+        // TODO delete old tree or no?
     }
 
     const std::string& Document::originalContents() const {
