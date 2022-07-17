@@ -6,6 +6,7 @@ tsf_cc_binary(
     deps = [
         ":bracket_existance_traverser",
         ":indentation_traverser",
+        ":parse_traverser",
         ":space_traverser",
         ":constants",
         ":configuration",
@@ -62,6 +63,14 @@ tsf_cc_library(
         ":traverser",
         ":style",
     ],
+)
+
+tsf_cc_library(
+    name = "parse_traverser",
+    hdrs = ["traversers/ParseTraverser.h"],
+    srcs = ["traversers/ParseTraverser.cpp"],
+    include_prefix = "tree_sitter_format",
+    deps = [":traverser"],
 )
 
 tsf_cc_library(

@@ -17,6 +17,8 @@ inline const TSSymbol FUNCTION_DEFINITION = ts_language_symbol_for_name(tree_sit
 inline const TSSymbol SWITCH_STATEMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "switch_statement", 16, true);
 inline const TSSymbol CASE_STATEMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "case_statement", 14, true);
 
+inline const TSSymbol DECLARATION = ts_language_symbol_for_name(tree_sitter_cpp(), "declaration", 11, true);
+
 // Regular code block
 inline const TSSymbol COMPOUND_STATEMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "compound_statement", 18, true);
 // The block for namespaces and externs
@@ -28,6 +30,8 @@ inline const TSSymbol FIELD_DECLARATION_LIST = ts_language_symbol_for_name(tree_
 // The block for braced initialiation (designated initialization, struct initialization, etc)
 inline const TSSymbol INITIALIZER_LIST = ts_language_symbol_for_name(tree_sitter_cpp(), "initializer_list", 16, true);
 
+inline const TSSymbol EXPRESSION = ts_language_symbol_for_name(tree_sitter_cpp(), "expression", 10, true);
+inline const TSSymbol COMMA_EXPRESSION = ts_language_symbol_for_name(tree_sitter_cpp(), "comma_expression", 16, true);
 inline const TSSymbol BINARY_EXPRESSION = ts_language_symbol_for_name(tree_sitter_cpp(), "binary_expression", 17, true);
 
 inline const TSSymbol ERROR = ts_language_symbol_for_name(tree_sitter_cpp(), "ERROR", 5, true);

@@ -4,6 +4,7 @@
 
 #include <tree_sitter_format/traversers/BracketExistanceTraverser.h>
 #include <tree_sitter_format/traversers/IndentationTraverser.h>
+#include <tree_sitter_format/traversers/ParseTraverser.h>
 #include <tree_sitter_format/traversers/SpaceTraverser.h>
 
 #include <tree_sitter/api.h>
@@ -60,6 +61,11 @@ int main() {
     IndentationTraverser t(document, style);
     t.traverse(document.root());
     document.applyEdits(t.edits());
+
+    // Debug Print
+    // ParseTraverser p;
+    // p.traverse(document.root());
+
 
     // Trailing Space
     SpaceTraverser s(document, style);

@@ -31,7 +31,7 @@ void HandleCompoundChild(TSNode node, uint32_t childIndex, BracketExistanceConte
                 next = ts_node_next_sibling(node);
             } 
             TSPoint openPoint = ts_node_start_point(openBraceNode);
-            TSPoint closePoint = ts_node_start_point(closeBraceNode);
+            TSPoint closePoint = ts_node_end_point(closeBraceNode);
             TSPoint prevPoint = ts_node_end_point(prev);
             TSPoint nextPoint = ts_node_is_null(next) ? closePoint : ts_node_start_point(next);
 
