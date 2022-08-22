@@ -7,6 +7,8 @@
 #include <tree_sitter_format/traversers/ParseTraverser.h>
 #include <tree_sitter_format/traversers/SpaceTraverser.h>
 
+#include <tree_sitter_format/Formatter.h>
+
 #include <tree_sitter/api.h>
 
 #include <iostream>
@@ -35,8 +37,6 @@ int main() {
     Document document(inputFileName);
     std::cout << "Input Text: " << std::endl << document << std::endl;
 
-    std::string text = document.originalContents();
-
     TSNode root = document.root();
 
     if (ts_node_has_error(root)) {
@@ -52,25 +52,17 @@ int main() {
         return EXIT_FAILURE;
     }
 
+    Formatter formatter;
     // Ensure Braces
-    BracketExistanceTraverser b(style);
-    b.traverse(document.root());
-    document.applyEdits(b.edits());
-
+    formatter.addTraverser(std::make_unique<BracketExistanceTraverser>());
     // Reindent
-    IndentationTraverser t(document, style);
-    t.traverse(document.root());
-    document.applyEdits(t.edits());
-
+    formatter.addTraverser(std::make_unique<IndentationTraverser>());
     // Debug Print
-    // ParseTraverser p;
-    // p.traverse(document.root());
-
-
+    // formatter.addTraverser(std::make_unique<ParseTraverser>());
     // Trailing Space
-    SpaceTraverser s(document, style);
-    s.traverse(document.root());
-    document.applyEdits(s.edits());
+    formatter.addTraverser(std::make_unique<SpaceTraverser>());
+
+    formatter.format(style, document);
 
     output << document;
 

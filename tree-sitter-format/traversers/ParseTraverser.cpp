@@ -15,7 +15,12 @@ namespace {
 }
 
 namespace tree_sitter_format {
-    void ParseTraverser::visitLeaf(TSNode node) {
+    void ParseTraverser::reset([[maybe_unused]]const TraverserContext& context) {
+        index = 0;
+        scope = 0;
+    }
+
+    void ParseTraverser::visitLeaf(TSNode node, [[maybe_unused]]TraverserContext& context) {
         TSNode parent = ts_node_parent(node);
         TSPoint start = ts_node_start_point(node);
         TSPoint end = ts_node_end_point(node);
@@ -34,7 +39,8 @@ namespace tree_sitter_format {
 
         std::cout << std::endl;
     }
-    void ParseTraverser::preVisitChild([[maybe_unused]]TSNode node, uint32_t childIndex) {
+
+    void ParseTraverser::preVisitChild(TSNode node, uint32_t childIndex, [[maybe_unused]]TraverserContext& context) {
         index = childIndex;
 
         std::string_view fieldName = ChildFieldName(node, childIndex);
@@ -47,10 +53,11 @@ namespace tree_sitter_format {
         }
 
         if (childHasChildren) {
-            visitLeaf(child);
+            visitLeaf(child, context);
         }        
     }
-    void ParseTraverser::postVisitChild(TSNode node, uint32_t childIndex) {
+
+    void ParseTraverser::postVisitChild(TSNode node, uint32_t childIndex, [[maybe_unused]]TraverserContext& context) {
         uint32_t childCount = ts_node_child_count(node);
         if(childIndex == childCount - 1) {
             scope--;

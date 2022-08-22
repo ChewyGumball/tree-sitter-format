@@ -10,9 +10,11 @@ private:
     uint32_t scope = 0;
 
 protected:
-    void visitLeaf(TSNode node) override;
-    void preVisitChild(TSNode node, uint32_t childIndex) override;
-    void postVisitChild(TSNode node, uint32_t childIndex) override;
+    void reset(const TraverserContext& context) override;
+    
+    void visitLeaf(TSNode node, TraverserContext& context) override;
+    void preVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) override;
+    void postVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) override;
 };
 
 }

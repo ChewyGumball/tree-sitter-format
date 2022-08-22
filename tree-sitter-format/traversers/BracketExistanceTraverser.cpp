@@ -17,7 +17,7 @@ std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
     }
 }
     
-void HandleCompoundChild(TSNode node, uint32_t childIndex, BracketExistanceContext& context, Style::BraceExistance style) {
+void HandleCompoundChild(TSNode node, uint32_t childIndex, TraverserContext& context, Style::BraceExistance style) {
     TSNode child = ts_node_child(node, childIndex);
     TSSymbol symbol = ts_node_symbol(child);
     if (symbol == COMPOUND_STATEMENT) {
@@ -38,7 +38,7 @@ void HandleCompoundChild(TSNode node, uint32_t childIndex, BracketExistanceConte
     }
 }
 
-void IfStatementEdits(TSNode node, uint32_t childIndex, BracketExistanceContext& context) {
+void IfStatementEdits(TSNode node, uint32_t childIndex, TraverserContext& context) {
     std::string_view fieldName = ChildFieldName(node, childIndex);
 
     if (fieldName != "consequence" && fieldName != "alternative") {
@@ -48,7 +48,7 @@ void IfStatementEdits(TSNode node, uint32_t childIndex, BracketExistanceContext&
     HandleCompoundChild(node, childIndex, context, context.style.braces.ifStatements);
 }
 
-void WhileLoopEdits(TSNode node, uint32_t childIndex, BracketExistanceContext& context) {
+void WhileLoopEdits(TSNode node, uint32_t childIndex, TraverserContext& context) {
     std::string_view fieldName = ChildFieldName(node, childIndex);
 
     if (fieldName != "body") {
@@ -58,7 +58,7 @@ void WhileLoopEdits(TSNode node, uint32_t childIndex, BracketExistanceContext& c
     HandleCompoundChild(node, childIndex, context, context.style.braces.whileLoops);
 }
 
-void DoWhileLoopEdits(TSNode node, uint32_t childIndex, BracketExistanceContext& context) {
+void DoWhileLoopEdits(TSNode node, uint32_t childIndex, TraverserContext& context) {
     std::string_view fieldName = ChildFieldName(node, childIndex);
 
     if (fieldName != "body") {
@@ -68,7 +68,7 @@ void DoWhileLoopEdits(TSNode node, uint32_t childIndex, BracketExistanceContext&
     HandleCompoundChild(node, childIndex, context, context.style.braces.doWhileLoops);
 }
 
-void ForLoopEdits(TSNode node, uint32_t childIndex, BracketExistanceContext& context) {
+void ForLoopEdits(TSNode node, uint32_t childIndex, TraverserContext& context) {
     // For Loops don't have a named body, its just the last child...
     if (childIndex != ts_node_child_count(node) - 1) {
         return;
@@ -77,7 +77,7 @@ void ForLoopEdits(TSNode node, uint32_t childIndex, BracketExistanceContext& con
     HandleCompoundChild(node, childIndex, context, context.style.braces.forLoops);
 }
 
-void ForRangeLoopEdits(TSNode node, uint32_t childIndex, BracketExistanceContext& context) {
+void ForRangeLoopEdits(TSNode node, uint32_t childIndex, TraverserContext& context) {
     std::string_view fieldName = ChildFieldName(node, childIndex);
 
     if (fieldName != "body") {
@@ -87,7 +87,7 @@ void ForRangeLoopEdits(TSNode node, uint32_t childIndex, BracketExistanceContext
     HandleCompoundChild(node, childIndex, context, context.style.braces.forLoops);
 }
 
-void CaseStatementEdits(TSNode node, uint32_t childIndex, BracketExistanceContext& context) {
+void CaseStatementEdits(TSNode node, uint32_t childIndex, TraverserContext& context) {
     // Case statements are defined as: ('case' {expression} | 'default) ':' {stuff}+ 
     // so we need to find where the ':' is, and everything after that is what would be the
     // target of our brace work.
@@ -123,7 +123,7 @@ void CaseStatementEdits(TSNode node, uint32_t childIndex, BracketExistanceContex
     }
 }
 
-void SwitchStatementEdits(TSNode node, uint32_t childIndex, BracketExistanceContext& context) {
+void SwitchStatementEdits(TSNode node, uint32_t childIndex, TraverserContext& context) {
     std::string_view fieldName = ChildFieldName(node, childIndex);
 
     if (fieldName != "body") {
@@ -135,13 +135,10 @@ void SwitchStatementEdits(TSNode node, uint32_t childIndex, BracketExistanceCont
 }
 
 namespace tree_sitter_format {
-BracketExistanceTraverser::BracketExistanceTraverser(const Style& style) : context({.style = style}) {}
+void BracketExistanceTraverser::reset([[maybe_unused]]const TraverserContext& context) { }
+void BracketExistanceTraverser::visitLeaf([[maybe_unused]] TSNode node, [[maybe_unused]]TraverserContext& context) { }
 
-const std::vector<Edit>& BracketExistanceTraverser::edits() const { return context.edits; }
-
-void BracketExistanceTraverser::visitLeaf([[maybe_unused]] TSNode node) { }
-
-void BracketExistanceTraverser::preVisitChild(TSNode node, uint32_t childIndex) {
+void BracketExistanceTraverser::preVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
     TSSymbol symbol = ts_node_symbol(node);
 
     if (symbol == IF_STATEMENT) {
@@ -160,5 +157,5 @@ void BracketExistanceTraverser::preVisitChild(TSNode node, uint32_t childIndex) 
         CaseStatementEdits(node, childIndex, context);
     }
 }
-void BracketExistanceTraverser::postVisitChild([[maybe_unused]] TSNode node, [[maybe_unused]] uint32_t childIndex) { }
+void BracketExistanceTraverser::postVisitChild([[maybe_unused]] TSNode node, [[maybe_unused]] uint32_t childIndex, [[maybe_unused]]TraverserContext& context) { }
 }

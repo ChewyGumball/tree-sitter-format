@@ -170,30 +170,20 @@ ScopeChange ScopeChangeForChild(TSNode node, uint32_t childIndex, const Style& s
 }
 
 namespace tree_sitter_format {
-    
-IndentationTraverser::IndentationTraverser(const Document& document, const Style& style) : context(IndentationContext {
-        .scope = 0,
-        .previousPosition = Position {
-            .location = TSPoint { .row = 0, .column = 0 },
-            .byteOffset = 0,
-        },
-        .document = document,
-        .style = style,
-    }) {}
 
-    
-const std::vector<Edit>& IndentationTraverser::edits() const {
-    return context.edits;
+void IndentationTraverser::reset(const TraverserContext& context) {
+    scope = 0;
+    previousPosition = Position::StartOf(context.document.root());
 }
 
-void IndentationTraverser::visitLeaf(TSNode node) {
+void IndentationTraverser::visitLeaf(TSNode node, TraverserContext& context) {
     if (!context.style.indentation.reindent) {
         return;
     }
 
     Position position = Position::StartOf(node);
 
-    uint32_t previousRow = context.previousPosition.location.row;
+    uint32_t previousRow = previousPosition.location.row;
     uint32_t currentRow = position.location.row;
 
     if (previousRow != currentRow) {
@@ -202,27 +192,27 @@ void IndentationTraverser::visitLeaf(TSNode node) {
         // Delete the previous white space
         context.edits.push_back(DeleteEdit{.range = preceedingWhitespace});
 
-        for(uint32_t i = 0; i < context.scope; i++) {
+        for(uint32_t i = 0; i < scope; i++) {
             context.edits.push_back(InsertEdit{.position = preceedingWhitespace.start, .bytes = context.style.indentationString()});
         }
     }
 
-    context.previousPosition = Position::EndOf(node);
+    previousPosition = Position::EndOf(node);
 }
 
-void IndentationTraverser::preVisitChild(TSNode node, uint32_t childIndex) {
+void IndentationTraverser::preVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
     ScopeChange change = ScopeChangeForChild(node, childIndex, context.style);
 
     if (change == ScopeChange::IncreaseBefore || change == ScopeChange::Both) {
-        context.scope++;
+        scope++;
     }
 }
 
-void IndentationTraverser::postVisitChild(TSNode node, uint32_t childIndex) {
+void IndentationTraverser::postVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
     ScopeChange change = ScopeChangeForChild(node, childIndex, context.style);
 
     if (change == ScopeChange::DecreaseAfter || change == ScopeChange::Both) {
-        context.scope--;
+        scope--;
     }
 }
 

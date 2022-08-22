@@ -15,11 +15,6 @@ namespace {
 
         return s.str();
     }
-
-    struct EditStartVisit {
-        uint32_t operator()(const tree_sitter_format::DeleteEdit& d) { return d.range.start.byteOffset; }
-        uint32_t operator()(const tree_sitter_format::InsertEdit& i) { return i.position.byteOffset; }
-    };
 }
 
 extern "C" {
@@ -27,30 +22,6 @@ const TSLanguage* tree_sitter_cpp(void);
 }
 
 namespace tree_sitter_format {
-    
-
-    std::strong_ordering operator<=>(const Position& lhs, const Position& rhs) {
-        if (lhs.location.row == rhs.location.row) {
-            return lhs.location.column <=> rhs.location.column;
-        } else {
-            return lhs.location.row <=> rhs.location.row;
-        }
-    }
-
-    bool operator<(const Edit& lhs, const Edit& rhs) {
-            bool aIsDelete = std::holds_alternative<DeleteEdit>(lhs);
-            bool bIsDelete = std::holds_alternative<DeleteEdit>(rhs);
-
-            uint32_t aStart = std::visit(EditStartVisit(), lhs);            
-            uint32_t bStart = std::visit(EditStartVisit(), rhs);
-
-            if (aStart == bStart && aIsDelete && !bIsDelete) {
-                return true;
-            } else {
-                return aStart > bStart;
-            }
-    }
-
 
     Document::Location Document::findByteLocation(uint32_t position) const {
         assert(position < length);
@@ -112,7 +83,10 @@ namespace tree_sitter_format {
     }
 
     Document::Document(const std::filesystem::path& file) : Document(ReadFile(file)) {}
-    Document::Document(const std::string&& contents) : original(std::move(contents)), elements({original}), length(original.size()), parser(ts_parser_new(), ts_parser_delete), tree(nullptr, ts_tree_delete) {       
+
+    Document::Document(const std::string& contents) : Document(std::string(contents)) {}
+
+    Document::Document(std::string&& contents) : original(std::move(contents)), elements({original}), length(original.size()), parser(ts_parser_new(), ts_parser_delete), tree(nullptr, ts_tree_delete) {       
         ts_parser_set_language(parser.get(), tree_sitter_cpp());
         tree.reset(ts_parser_parse(parser.get(), nullptr, inputReader()));
     }
@@ -196,6 +170,12 @@ namespace tree_sitter_format {
     
     const std::string_view Document::originalContentsAt(Range range) const {
         return std::string_view(original).substr(range.start.byteOffset, range.byteCount());
+    }
+    
+    std::string Document::toString() const {
+        std::ostringstream s;
+        s << *this;
+        return s.str();
     }
     
     std::string Document::contentsAt(Range range) const {

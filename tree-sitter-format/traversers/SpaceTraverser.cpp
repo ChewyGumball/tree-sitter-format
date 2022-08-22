@@ -18,7 +18,7 @@ namespace {
         }
     }
 
-    void EnsureSpacing(TSNode currentNode, TSNode nextNode, Style::Whitespace style, SpaceContext& context) {
+    void EnsureSpacing(TSNode currentNode, TSNode nextNode, Style::Whitespace style, TraverserContext& context) {
         if (style == Style::Whitespace::Ignore) {
             return;
         }
@@ -38,12 +38,12 @@ namespace {
         }
     }
 
-    void EnsureSpacing(TSNode currentNode, TSNode previousNode, TSNode nextNode, Style::WhitespacePlacement style, SpaceContext& context) {
+    void EnsureSpacing(TSNode currentNode, TSNode previousNode, TSNode nextNode, Style::WhitespacePlacement style, TraverserContext& context) {
         EnsureSpacing(previousNode, currentNode, style.before, context);
         EnsureSpacing(currentNode, nextNode, style.after, context);
     }
 
-    void EnsureSpacing(TSNode parent, uint32_t childIndex, Style::WhitespacePlacement style, SpaceContext& context) {
+    void EnsureSpacing(TSNode parent, uint32_t childIndex, Style::WhitespacePlacement style, TraverserContext& context) {
         TSNode prev = ts_node_child(parent, childIndex - 1);
         TSNode child = ts_node_child(parent, childIndex);
         TSNode next = ts_node_child(parent, childIndex + 1);
@@ -51,7 +51,7 @@ namespace {
         EnsureSpacing(child, prev, next, style, context);
     }
 
-    void CommaExpressionSpacing(TSNode node, Style::WhitespacePlacement style, SpaceContext& context) {
+    void CommaExpressionSpacing(TSNode node, Style::WhitespacePlacement style, TraverserContext& context) {
         EnsureSpacing(node, 1, style, context);
 
         TSNode rightSide = ts_node_child(node, 2);
@@ -60,7 +60,7 @@ namespace {
         }
     }
 
-    void ForLoopStatementSpacing(TSNode node, uint32_t childIndex, SpaceContext& context) {
+    void ForLoopStatementSpacing(TSNode node, uint32_t childIndex, TraverserContext& context) {
         assert(ts_node_symbol(node) == FOR_LOOP);
 
         std::string_view fieldName = ChildFieldName(node, childIndex);
@@ -134,7 +134,7 @@ namespace {
         }
     }
 
-    void BinaryOperatorSpacing(TSNode node, uint32_t childIndex, SpaceContext& context) {
+    void BinaryOperatorSpacing(TSNode node, uint32_t childIndex, TraverserContext& context) {
         assert(ts_node_symbol(node) == BINARY_EXPRESSION);
 
         std::string_view fieldName = ChildFieldName(node, childIndex);
@@ -151,34 +151,27 @@ namespace {
 }
 
 namespace tree_sitter_format {
+    
+void SpaceTraverser::reset(const TraverserContext& context) {
+    previousPosition = Position::StartOf(context.document.root());
+}
 
-SpaceTraverser::SpaceTraverser(const Document& document, const Style& style) : context(SpaceContext{
-        .previousPosition = Position {
-            .location = TSPoint { .row = 0, .column = 0 },
-            .byteOffset = 0,
-        },
-        .document = document,
-        .style = style,
-    }) {}
-
-const std::vector<Edit>& SpaceTraverser::edits() const { return context.edits; }
-
-void SpaceTraverser::visitLeaf(TSNode node) {
+void SpaceTraverser::visitLeaf(TSNode node, TraverserContext& context) {
     if (!context.style.spacing.trimTrailing) {
         return;
     }
 
     Position currentPosition = Position::StartOf(node);
 
-    if (currentPosition.location.row > context.previousPosition.location.row) {
-        Range trailingSpace = context.document.toNextNewLine(context.previousPosition);
+    if (currentPosition.location.row > previousPosition.location.row) {
+        Range trailingSpace = context.document.toNextNewLine(previousPosition);
         context.edits.push_back(DeleteEdit{ .range = trailingSpace });
     }
 
-    context.previousPosition = Position::EndOf(node);
+    previousPosition = Position::EndOf(node);
 }
 
-void SpaceTraverser::preVisitChild(TSNode node, uint32_t childIndex) {
+void SpaceTraverser::preVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
     if (!context.style.spacing.respace) {
         return;
     }
@@ -191,6 +184,10 @@ void SpaceTraverser::preVisitChild(TSNode node, uint32_t childIndex) {
     }
 }
 
-void SpaceTraverser::postVisitChild([[maybe_unused]]TSNode node, [[maybe_unused]]uint32_t childIndex) { }
+void SpaceTraverser::postVisitChild(
+    [[maybe_unused]]TSNode node,
+    [[maybe_unused]]uint32_t childIndex,
+    [[maybe_unused]]TraverserContext& context) {
+}
 
 }
