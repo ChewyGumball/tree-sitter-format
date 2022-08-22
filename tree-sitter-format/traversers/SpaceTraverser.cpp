@@ -18,49 +18,41 @@ namespace {
         }
     }
 
-    void EnsureSpacing(TSNode currentNode, TSNode previousNode, TSNode nextNode, Style::SpacePlacement style, std::vector<Edit>& edits) {
-        if (style == Style::SpacePlacement::Ignore) {
+    void EnsureSpacing(TSNode currentNode, TSNode nextNode, Style::Whitespace style, SpaceContext& context) {
+        if (style == Style::Whitespace::Ignore) {
             return;
         }
 
+        const Position lhs = Position::EndOf(currentNode);
+        const Position rhs = Position::StartOf(nextNode);
 
-        Position lhs = Position::EndOf(previousNode);
-        Position rhs = Position::StartOf(nextNode);
+        const bool onSameLine = lhs.location.row == rhs.location.row;
 
-        Position start = Position::StartOf(currentNode);
-        Position end = Position::EndOf(currentNode);
-
-        if (style == Style::SpacePlacement::None || style == Style::SpacePlacement::After) {
-            if (lhs < start) {
-                edits.push_back(DeleteEdit{.range = Range::Between(lhs, start)});
+        if (onSameLine && style == Style::Whitespace::Newline) {
+            context.edits.push_back(InsertEdit{.position = lhs, .bytes = context.style.newLineString()});
+        } else if (!onSameLine && style != Style::Whitespace::Newline) {
+            context.edits.push_back(DeleteEdit{.range = Range::Between(lhs, rhs)});
+            if (style == Style::Whitespace::Space) {
+                context.edits.push_back(InsertEdit {.position = rhs, .bytes = " "sv});
             }
-        }
-        else if (lhs.location.row != start.location.row || lhs.location.column != start.location.column - 1) {
-            edits.push_back(DeleteEdit{.range = Range::Between(lhs, start)});
-            edits.push_back(InsertEdit{.position = start, .bytes = " "sv});
-        }
-        
-        if (style == Style::SpacePlacement::None || style == Style::SpacePlacement::Before) {
-            if (rhs > start) {
-                edits.push_back(DeleteEdit{.range = Range::Between(end, rhs)});
-            }
-        }
-        else if (rhs.location.row != end.location.row || rhs.location.column != end.location.column + 1) {
-            edits.push_back(DeleteEdit{.range = Range::Between(end, rhs)});
-            edits.push_back(InsertEdit{.position = rhs, .bytes = " "sv});
         }
     }
 
-    void EnsureSpacing(TSNode parent, uint32_t childIndex, Style::SpacePlacement style, std::vector<Edit>& edits) {
+    void EnsureSpacing(TSNode currentNode, TSNode previousNode, TSNode nextNode, Style::WhitespacePlacement style, SpaceContext& context) {
+        EnsureSpacing(previousNode, currentNode, style.before, context);
+        EnsureSpacing(currentNode, nextNode, style.after, context);
+    }
+
+    void EnsureSpacing(TSNode parent, uint32_t childIndex, Style::WhitespacePlacement style, SpaceContext& context) {
         TSNode prev = ts_node_child(parent, childIndex - 1);
         TSNode child = ts_node_child(parent, childIndex);
         TSNode next = ts_node_child(parent, childIndex + 1);
 
-        EnsureSpacing(child, prev, next, style, edits);
+        EnsureSpacing(child, prev, next, style, context);
     }
 
-    void CommaExpressionSpacing(TSNode node, Style::SpacePlacement style, SpaceContext& context) {
-        EnsureSpacing(node, 1, style, context.edits);
+    void CommaExpressionSpacing(TSNode node, Style::WhitespacePlacement style, SpaceContext& context) {
+        EnsureSpacing(node, 1, style, context);
 
         TSNode rightSide = ts_node_child(node, 2);
         if (ts_node_symbol(rightSide) == COMMA_EXPRESSION) {
@@ -75,8 +67,8 @@ namespace {
 
         if (childIndex == 1) {
             // Opening Parenthesis
-            const Style::SpacePlacement style = context.style.spacing.forLoops.openingParenthesis;
-            EnsureSpacing(node, childIndex, style, context.edits);
+            const Style::WhitespacePlacement style = context.style.spacing.forLoops.parentheses.opening;
+            EnsureSpacing(node, childIndex, style, context);
         } else if (fieldName == "initializer") {
             // We could have a declaration, or an arbitrary expression, or a comma expression
             TSNode child = ts_node_child(node, childIndex);
@@ -90,33 +82,33 @@ namespace {
                 // be labeled as "declarator", but there seems to be a bug, and
                 // some commas are labeled that instead... so don't use labels...
                 for(uint32_t i = 2; i < childChildCount - 1; i += 2) {
-                    const Style::SpacePlacement style = context.style.spacing.forLoops.commas;
-                    EnsureSpacing(child, i, style, context.edits);
+                    const Style::WhitespacePlacement style = context.style.spacing.forLoops.commas;
+                    EnsureSpacing(child, i, style, context);
                 }
 
                 // handle the ending semicolon (the last child of the child)
-                const Style::SpacePlacement style = context.style.spacing.forLoops.semicolons;
+                const Style::WhitespacePlacement style = context.style.spacing.forLoops.semicolons;
                 
                 TSNode prev = ts_node_child(child, childChildCount - 2);
                 TSNode semicolon = ts_node_child(child, childChildCount - 1);
                 TSNode next = ts_node_child(node, childIndex + 1);
-                EnsureSpacing(semicolon, prev, next, style, context.edits);
+                EnsureSpacing(semicolon, prev, next, style, context);
 
             } else {
                 if (childSymbol == COMMA_EXPRESSION) {
                     // handle commas
-                    const Style::SpacePlacement style = context.style.spacing.forLoops.commas;
+                    const Style::WhitespacePlacement style = context.style.spacing.forLoops.commas;
                     CommaExpressionSpacing(child, style, context);
                 }
 
                 // handle ending semicolon (its childIndex + 1 now)
-                const Style::SpacePlacement style = context.style.spacing.forLoops.semicolons;
-                EnsureSpacing(node, childIndex + 1, style, context.edits);
+                const Style::WhitespacePlacement style = context.style.spacing.forLoops.semicolons;
+                EnsureSpacing(node, childIndex + 1, style, context);
             }
         } else if (fieldName == "condition") {
             // handle ending semicolon (its childIndex + 1 now)   
-            const Style::SpacePlacement style = context.style.spacing.forLoops.semicolons;
-            EnsureSpacing(node, childIndex + 1, style, context.edits);
+            const Style::WhitespacePlacement style = context.style.spacing.forLoops.semicolons;
+            EnsureSpacing(node, childIndex + 1, style, context);
         } else if (fieldName == "update") {
             // We could have an arbitrary expression, or a comma expression
             TSNode child = ts_node_child(node, childIndex);
@@ -124,13 +116,13 @@ namespace {
 
             if (childSymbol == COMMA_EXPRESSION) {
                 // handle commas
-                const Style::SpacePlacement style = context.style.spacing.forLoops.commas;
+                const Style::WhitespacePlacement style = context.style.spacing.forLoops.commas;
                 CommaExpressionSpacing(child, style, context);
             }
 
             // handle closing paranthesis (its childIndex + 1 now)            
-            const Style::SpacePlacement style = context.style.spacing.forLoops.closingParenthesis;
-            EnsureSpacing(node, childIndex + 1, style, context.edits);
+            const Style::WhitespacePlacement style = context.style.spacing.forLoops.parentheses.closing;
+            EnsureSpacing(node, childIndex + 1, style, context);
         } else if (childIndex == ts_node_child_count(node) - 1) {
             // Body
             TSNode child = ts_node_child(node, childIndex);
@@ -147,13 +139,13 @@ namespace {
 
         std::string_view fieldName = ChildFieldName(node, childIndex);
         if (fieldName == "operator") {        
-            Style::SpacePlacement style = context.style.spacing.binaryOperator;
+            Style::WhitespacePlacement style = context.style.spacing.binaryOperator;
 
             TSNode lhs = ts_node_child(node, childIndex - 1);
             TSNode child = ts_node_child(node, childIndex);
             TSNode rhs = ts_node_child(node, childIndex + 1);
 
-            EnsureSpacing(child, lhs, rhs, style, context.edits);
+            EnsureSpacing(child, lhs, rhs, style, context);
         }
     }
 }

@@ -11,7 +11,8 @@ struct BraceStyle {
 
 
 struct Style {
-    enum class Whitespace { Spaces, Tabs };
+    enum class Whitespace { Space, Newline, Ignore, None };
+    enum class IndentationWhitespace { Spaces, Tabs };
     enum class Indentation { BracesIndented, BodyIndented, BothIndented, None };
 
     struct {
@@ -27,7 +28,7 @@ struct Style {
         Indentation forLoops = Indentation::BodyIndented;
         Indentation genericScope = Indentation::BodyIndented;
 
-        Whitespace whitespace = Whitespace::Spaces;
+        IndentationWhitespace whitespace = IndentationWhitespace::Spaces;
         uint32_t indentationAmount = 4;
         uint32_t tabWidth = 4;
         bool reindent = true;
@@ -35,196 +36,385 @@ struct Style {
 
     std::string_view indentationString() const;
 
-    enum class NewlinePlacement { Before, After, Surround, Ignore };
     enum class BraceExistance { Require, Remove, Ignore };
-    struct Braces {
-        NewlinePlacement openingBrace;
-        NewlinePlacement closingBrace;
-        BraceExistance existance;
-    };
 
     struct {
-        // Existance is ALWAYS required for these ones and shouldn't be modified
-        Braces namespaces = {
-            .openingBrace = NewlinePlacement::After,
-            .closingBrace = NewlinePlacement::Surround,
-            .existance = BraceExistance::Require,
-        };
-
-        Braces classes = {
-            .openingBrace = NewlinePlacement::After,
-            .closingBrace = NewlinePlacement::Surround,
-            .existance = BraceExistance::Require,
-        };
-        
-        Braces structs = {
-            .openingBrace = NewlinePlacement::After,
-            .closingBrace = NewlinePlacement::Surround,
-            .existance = BraceExistance::Require,
-        };
-
-        Braces unions = {
-            .openingBrace = NewlinePlacement::After,
-            .closingBrace = NewlinePlacement::Surround,
-            .existance = BraceExistance::Require,
-        };
-        
-        Braces enums = {
-            .openingBrace = NewlinePlacement::After,
-            .closingBrace = NewlinePlacement::Surround,
-            .existance = BraceExistance::Require,
-        };
-        
-        Braces functionDefinitions = {
-            .openingBrace = NewlinePlacement::After,
-            .closingBrace = NewlinePlacement::Surround,
-            .existance = BraceExistance::Require,
-        };
-        
-        Braces switchStatements = {
-            .openingBrace = NewlinePlacement::After,
-            .closingBrace = NewlinePlacement::Surround,
-            .existance = BraceExistance::Require,
-        };
-        
-        // Existance is optional for these ones
-        Braces forLoops = {
-            .openingBrace = NewlinePlacement::After,
-            .closingBrace = NewlinePlacement::Surround,
-            .existance = BraceExistance::Require,
-        };
-        
-        Braces whileLoops = {
-            .openingBrace = NewlinePlacement::After,
-            .closingBrace = NewlinePlacement::Surround,
-            .existance = BraceExistance::Require,
-        };
-        
-        Braces doWhileLoops = {
-            .openingBrace = NewlinePlacement::After,
-            .closingBrace = NewlinePlacement::Surround,
-            .existance = BraceExistance::Require,
-        };
-        
-        Braces ifStatements = {
-            .openingBrace = NewlinePlacement::After,
-            .closingBrace = NewlinePlacement::Surround,
-            .existance = BraceExistance::Require,
-        };
-        
-        Braces caseStatements = {
-            .openingBrace = NewlinePlacement::After,
-            .closingBrace = NewlinePlacement::Surround,
-            .existance = BraceExistance::Require,
-        };
+        BraceExistance ifStatements = BraceExistance::Require;
+        BraceExistance forLoops = BraceExistance::Require;
+        BraceExistance whileLoops = BraceExistance::Require;
+        BraceExistance doWhileLoops = BraceExistance::Require;
+        BraceExistance caseStatements = BraceExistance::Require;
+        BraceExistance switchStatements = BraceExistance::Require;
     } braces;
 
-    enum class LinePlacement { SameLine, NextLine, Ignore };
-    LinePlacement elseKeyword = LinePlacement::SameLine;
+    struct WhitespacePlacement {
+        Whitespace before;
+        Whitespace after;
+    };
 
+    struct PairedWhitespace {
+        WhitespacePlacement opening;
+        WhitespacePlacement closing;
+    };
+
+    enum class NewLineType { CRLF, LF, CR };
     enum class SpacePlacement { None, Before, After, Surround, Ignore };
     struct {
         struct {
-            SpacePlacement openingBrace = SpacePlacement::Surround;
-            SpacePlacement closingBrace = SpacePlacement::Surround;
+            PairedWhitespace braces {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::Newline,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::Newline,
+                    .after = Whitespace::Newline,
+                },
+            };
         } namespaces;
 
         struct {
-            SpacePlacement openingBrace = SpacePlacement::Surround;
-            SpacePlacement closingBrace = SpacePlacement::Before;
+            PairedWhitespace braces {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::Newline,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::Newline,
+                    .after = Whitespace::Newline,
+                },
+            };
+
+            WhitespacePlacement name {
+                .before = Whitespace::Space,
+                .after = Whitespace::None,
+            };
         } classes;
         
         struct {
-            SpacePlacement openingBrace = SpacePlacement::Surround;
-            SpacePlacement closingBrace = SpacePlacement::Before;
-            SpacePlacement name = SpacePlacement::Before;
+            PairedWhitespace braces {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::Newline,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::Newline,
+                    .after = Whitespace::Newline,
+                },
+            };
+
+            WhitespacePlacement name {
+                .before = Whitespace::Space,
+                .after = Whitespace::None,
+            };
         } structs;
         
         struct {
-            SpacePlacement openingBrace = SpacePlacement::Surround;
-            SpacePlacement closingBrace = SpacePlacement::Before;
-            SpacePlacement name = SpacePlacement::Before;
+            PairedWhitespace braces {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::Newline,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::Newline,
+                    .after = Whitespace::Newline,
+                },
+            };
+
+            WhitespacePlacement name {
+                .before = Whitespace::Space,
+                .after = Whitespace::None,
+            };
         } unions;
 
         struct {
-            SpacePlacement openingBrace = SpacePlacement::Surround;
-            SpacePlacement closingBrace = SpacePlacement::Before;
-            SpacePlacement commas = SpacePlacement::After;
+            PairedWhitespace braces {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::Newline,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::Newline,
+                    .after = Whitespace::Newline,
+                },
+            };
+
+            WhitespacePlacement name {
+                .before = Whitespace::Space,
+                .after = Whitespace::None,
+            };
         } enums;
 
         struct {
-            SpacePlacement openingParenthesis = SpacePlacement::None;
-            SpacePlacement closingParenthesis = SpacePlacement::After;
-            SpacePlacement commas = SpacePlacement::After;
+            PairedWhitespace parentheses {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::None,
+                    .after = Whitespace::None,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::None,
+                    .after = Whitespace::None,
+                },
+            };
+
+            WhitespacePlacement commas {
+                .before = Whitespace::None,
+                .after = Whitespace::Space,
+            };
         } functionDeclarations;
 
         struct {
-            SpacePlacement openingParenthesis = SpacePlacement::None;
-            SpacePlacement closingParenthesis = SpacePlacement::After;
-            SpacePlacement commas = SpacePlacement::After;
-            SpacePlacement openingBrace = SpacePlacement::Surround;
+            PairedWhitespace parentheses {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::None,
+                    .after = Whitespace::None,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::None,
+                    .after = Whitespace::None,
+                },
+            };
+
+            WhitespacePlacement commas {
+                .before = Whitespace::None,
+                .after = Whitespace::Space,
+            };
+
+            PairedWhitespace braces {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::Newline,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::Newline,
+                    .after = Whitespace::Newline,
+                },
+            };
         } functionDefinitions;
 
         struct {
-            SpacePlacement openingParenthesis = SpacePlacement::None;
-            SpacePlacement closingParenthesis = SpacePlacement::After;
-            SpacePlacement commas = SpacePlacement::After;
+            PairedWhitespace parentheses {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::None,
+                    .after = Whitespace::None,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::None,
+                    .after = Whitespace::None,
+                },
+            };
+
+            WhitespacePlacement commas {
+                .before = Whitespace::None,
+                .after = Whitespace::Space,
+            };
         } functionCalls;
 
         struct {
-            SpacePlacement forEachColon = SpacePlacement::Surround;
-            SpacePlacement semicolons = SpacePlacement::After;
-            SpacePlacement commas = SpacePlacement::After;
-            SpacePlacement openingParenthesis = SpacePlacement::Before;
-            SpacePlacement closingParenthesis = SpacePlacement::After;
-            SpacePlacement openingBrace = SpacePlacement::Surround;
+            PairedWhitespace parentheses {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::None,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::None,
+                    .after = Whitespace::None,
+                },
+            };
+
+            WhitespacePlacement commas {
+                .before = Whitespace::None,
+                .after = Whitespace::Space,
+            };
+
+            WhitespacePlacement semicolons {
+                .before = Whitespace::None,
+                .after = Whitespace::Space,
+            };
+
+            WhitespacePlacement forEachColon {
+                .before = Whitespace::Space,
+                .after = Whitespace::Space,
+            };
+
+            PairedWhitespace braces {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::Newline,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::Newline,
+                    .after = Whitespace::Newline,
+                },
+            };
         } forLoops;
 
-        struct {
-            SpacePlacement openingParenthesis = SpacePlacement::Before;
-            SpacePlacement closingParenthesis = SpacePlacement::After;
-            SpacePlacement openingBrace = SpacePlacement::Surround;
-            SpacePlacement semicolons = SpacePlacement::After;
-            SpacePlacement commas = SpacePlacement::After;
+        struct {            
+            PairedWhitespace parentheses {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::None,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::None,
+                    .after = Whitespace::None,
+                },
+            };
+
+            WhitespacePlacement commas {
+                .before = Whitespace::None,
+                .after = Whitespace::Space,
+            };
+
+            WhitespacePlacement semicolons {
+                .before = Whitespace::None,
+                .after = Whitespace::Space,
+            };
+
+            PairedWhitespace braces {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::Newline,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::Newline,
+                    .after = Whitespace::Newline,
+                },
+            };
         } whileLoops;
 
-        struct {
-            SpacePlacement openingParenthesis = SpacePlacement::Before;
-            SpacePlacement closingParenthesis = SpacePlacement::After;
-            SpacePlacement openingBrace = SpacePlacement::Surround;
-            SpacePlacement closingBrace = SpacePlacement::Surround;
-            SpacePlacement semicolons = SpacePlacement::After;
-            SpacePlacement commas = SpacePlacement::After;
+        struct {            
+            PairedWhitespace parentheses {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::None,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::None,
+                    .after = Whitespace::None,
+                },
+            };
+
+            WhitespacePlacement commas {
+                .before = Whitespace::None,
+                .after = Whitespace::Space,
+            };
+
+            WhitespacePlacement semicolons {
+                .before = Whitespace::None,
+                .after = Whitespace::Space,
+            };
+
+            PairedWhitespace braces {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::Newline,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::Newline,
+                    .after = Whitespace::Space,
+                },
+            };
         } doWhileLoops;
 
-        struct {
-            SpacePlacement openingParenthesis = SpacePlacement::Before;
-            SpacePlacement closingParenthesis = SpacePlacement::After;
-            SpacePlacement openingBrace = SpacePlacement::Surround;
-            SpacePlacement closingBrace = SpacePlacement::Before;
-            SpacePlacement elseKeyword = SpacePlacement::Surround;
-            SpacePlacement semicolons = SpacePlacement::After;
-            SpacePlacement commas = SpacePlacement::After;
+        struct {            
+            PairedWhitespace parentheses {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::None,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::None,
+                    .after = Whitespace::None,
+                },
+            };
+
+            WhitespacePlacement commas {
+                .before = Whitespace::None,
+                .after = Whitespace::Space,
+            };
+
+            WhitespacePlacement semicolons {
+                .before = Whitespace::None,
+                .after = Whitespace::Space,
+            };
+
+            PairedWhitespace braces {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::Newline,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::Newline,
+                    .after = Whitespace::Newline,
+                },
+            };
+
+            PairedWhitespace elseBraces {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::Newline,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::Newline,
+                    .after = Whitespace::Space,
+                },
+            };
         } ifStatements;
 
         struct {
-            SpacePlacement openingParenthesis = SpacePlacement::Before;
-            SpacePlacement closingParenthesis = SpacePlacement::After;
-            SpacePlacement openingBrace = SpacePlacement::Surround;
-            SpacePlacement closingBrace = SpacePlacement::Before;
+            PairedWhitespace parentheses {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::None,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::None,
+                    .after = Whitespace::None,
+                },
+            };
+
+            PairedWhitespace braces {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::Newline,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::Newline,
+                    .after = Whitespace::Newline,
+                },
+            };
         } switchStatements;
 
         struct {
-            SpacePlacement colon = SpacePlacement::After;
-            SpacePlacement openingBrace = SpacePlacement::Surround;
-            SpacePlacement closingBrace = SpacePlacement::Before;
+            PairedWhitespace braces {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::Newline,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::Newline,
+                    .after = Whitespace::Newline,
+                },
+            };
+
+            WhitespacePlacement colon {
+                .before = Whitespace::None,
+                .after = Whitespace::None,
+            };
         } caseStatements;
 
-        SpacePlacement binaryOperator = SpacePlacement::Surround;
+        WhitespacePlacement binaryOperator {
+            .before = Whitespace::Space,
+            .after = Whitespace::Space,
+        };
 
+        NewLineType newLineType = NewLineType::LF;
         bool respace = true;
         bool trimTrailing = true;
     } spacing;
+    
+    std::string_view newLineString() const;
 };
 
 }

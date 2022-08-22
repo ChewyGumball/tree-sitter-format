@@ -29,8 +29,8 @@ int main() {
     Style style;
 
     style.indentation.indentationAmount = 1;
-    style.indentation.whitespace = Style::Whitespace::Tabs;
-    style.braces.ifStatements.existance = Style::BraceExistance::Require;
+    style.indentation.whitespace = Style::IndentationWhitespace::Tabs;
+    style.braces.ifStatements = Style::BraceExistance::Require;
 
     Document document(inputFileName);
     std::cout << "Input Text: " << std::endl << document << std::endl;
