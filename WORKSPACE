@@ -33,9 +33,9 @@ http_archive(
 http_archive(
     name = "tree-sitter-cpp",
     build_file = "@tree-sitter-format//:third_party/tree-sitter-cpp.BUILD",
-    sha256 = "105d79c1ac2422428339a4e8637b290b2f119483da5095b7023e4aa14128c45b",
-    strip_prefix = "tree-sitter-cpp-38d8b495bd43977498f0eb122e0f9cfef8526d18",
-    url = "https://github.com/tree-sitter/tree-sitter-cpp/archive/38d8b495bd43977498f0eb122e0f9cfef8526d18.zip",
+    sha256 = "6a43fabdbdc49c783a29c648f4316d592d3270f81099031a3f4722f321bfe587",
+    strip_prefix = "tree-sitter-cpp-f40125503642845492d87fa56ece3ed26a4ef4db",
+    url = "https://github.com/tree-sitter/tree-sitter-cpp/archive/f40125503642845492d87fa56ece3ed26a4ef4db.zip",
 )
 
 ################

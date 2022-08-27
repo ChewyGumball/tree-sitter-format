@@ -123,7 +123,7 @@ namespace {
             // handle closing paranthesis (its childIndex + 1 now)            
             const Style::WhitespacePlacement style = context.style.spacing.forLoops.parentheses.closing;
             EnsureSpacing(node, childIndex + 1, style, context);
-        } else if (childIndex == ts_node_child_count(node) - 1) {
+        } else if (fieldName == "body") {
             // Body
             TSNode child = ts_node_child(node, childIndex);
             TSSymbol childSymbol = ts_node_symbol(child);

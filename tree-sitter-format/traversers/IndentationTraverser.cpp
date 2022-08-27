@@ -29,8 +29,10 @@ ScopeChange NonCompoundBodyScopeChange(TSNode node, uint32_t childIndex, const s
             TSNode child = ts_node_child(node, childIndex);
             TSSymbol childSymbol = ts_node_symbol(child);
 
-            // Compound statements handle their own indentation so they can be handled uniformly
-            if (childSymbol == COMPOUND_STATEMENT) {
+            // Compound Statements handle their own indentation so they can be handled uniformly
+            // Declaration Lists are handled the same as Compound Statements, but the grammar
+            // requires they be different node types.
+            if (childSymbol == COMPOUND_STATEMENT || childSymbol == DECLARATION_LIST) {
                 return ScopeChange::None;
             }
             
@@ -83,6 +85,8 @@ ScopeChange CompoundStatementScopeChange(TSNode node, uint32_t childIndex, const
         indentation = style.indentation.functionDefinitions;
     } else if (parentSymbol == SWITCH_STATEMENT) {
         indentation = style.indentation.switchStatements;
+    }  else if (parentSymbol == NAMESPACE) {
+        indentation = style.indentation.namespaces;
     } else {
         indentation = style.indentation.genericScope;
     }
@@ -155,18 +159,24 @@ ScopeChange CompoundStatementScopeChange(TSNode node, uint32_t childIndex, const
 ScopeChange ScopeChangeForChild(TSNode node, uint32_t childIndex, const Style& style) {
     TSSymbol symbol = ts_node_symbol(node);
 
+    // These handle indentation for bodies that have a single statement in them.
+    // Bodies with multiple statements are handled as compound statements (and similar brace enclosed nodes).
     if (symbol == IF_STATEMENT) {
         return IfStatementScopeChange(node, childIndex, style);
     } else if (symbol == WHILE_LOOP) {
         return WhileLoopScopeChange(node, childIndex, style);
     } else if (symbol == DO_WHILE_LOOP) {
         return DoWhileLoopScopeChange(node, childIndex, style);
-    } else if (symbol == COMPOUND_STATEMENT) {
+    } else if (symbol == COMPOUND_STATEMENT || symbol == DECLARATION_LIST) {
+        // This handles things that are enclosed in { and }
+        // There are multiple grammar symbols that are handled the same way
+        // but we will just refer to them all as compound statements.
         return CompoundStatementScopeChange(node, childIndex, style);
     }
 
     return ScopeChange::None;
 }
+
 }
 
 namespace tree_sitter_format {
@@ -186,6 +196,7 @@ void IndentationTraverser::visitLeaf(TSNode node, TraverserContext& context) {
     uint32_t previousRow = previousPosition.location.row;
     uint32_t currentRow = position.location.row;
 
+    // We only want to modify things if this is the first node on a line
     if (previousRow != currentRow) {
         Range preceedingWhitespace = context.document.toPreviousNewLine(position);
 
@@ -202,7 +213,6 @@ void IndentationTraverser::visitLeaf(TSNode node, TraverserContext& context) {
 
 void IndentationTraverser::preVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
     ScopeChange change = ScopeChangeForChild(node, childIndex, context.style);
-
     if (change == ScopeChange::IncreaseBefore || change == ScopeChange::Both) {
         scope++;
     }
@@ -210,7 +220,6 @@ void IndentationTraverser::preVisitChild(TSNode node, uint32_t childIndex, Trave
 
 void IndentationTraverser::postVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
     ScopeChange change = ScopeChangeForChild(node, childIndex, context.style);
-
     if (change == ScopeChange::DecreaseAfter || change == ScopeChange::Both) {
         scope--;
     }

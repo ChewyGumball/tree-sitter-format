@@ -69,8 +69,9 @@ void DoWhileLoopEdits(TSNode node, uint32_t childIndex, TraverserContext& contex
 }
 
 void ForLoopEdits(TSNode node, uint32_t childIndex, TraverserContext& context) {
-    // For Loops don't have a named body, its just the last child...
-    if (childIndex != ts_node_child_count(node) - 1) {
+    std::string_view fieldName = ChildFieldName(node, childIndex);
+
+    if (fieldName != "body") {
         return;
     }
 
