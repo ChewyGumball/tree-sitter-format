@@ -66,7 +66,10 @@ void RunTest(TestContext<STYLE_TYPE>& context, const std::vector<TestSuite<STYLE
                     tree_sitter_format::Document document(testCase.inputValue);
                     context.formatter.format(context.style, document);
 
-                    REQUIRE(document.toString() == testCase.outputValue);
+                    const std::string actual = document.toString();
+                    const std::string expected = testCase.outputValue;
+
+                    REQUIRE(actual == expected);
                 }
             }
         }

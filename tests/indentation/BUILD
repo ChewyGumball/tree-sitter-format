@@ -44,3 +44,21 @@ tsf_cc_test(
         "//tests:test_utils",
     ]
 )
+
+tsf_cc_test(
+    name = "while_loops",
+    srcs = ["WhileLoops.cpp"],
+    deps = [
+        "//tree-sitter-format:indentation_traverser",
+        "//tests:test_utils",
+    ]
+)
+
+tsf_cc_test(
+    name = "if_statements",
+    srcs = ["IfStatements.cpp"],
+    deps = [
+        "//tree-sitter-format:indentation_traverser",
+        "//tests:test_utils",
+    ]
+)
