@@ -91,11 +91,13 @@ ScopeChange CompoundStatementScopeChange(TSNode node, uint32_t childIndex, const
         indentation = style.indentation.functionDefinitions;
     } else if (parentSymbol == SWITCH_STATEMENT) {
         indentation = style.indentation.switchStatements;
-    }  else if (parentSymbol == NAMESPACE) {
+    } else if (parentSymbol == NAMESPACE) {
         indentation = style.indentation.namespaces;
-    }  else if (parentSymbol == STRUCT_DEFINITION) {
+    } else if (parentSymbol == STRUCT_DEFINITION) {
         indentation = style.indentation.structDefinitions;
-    }  else {
+    } else if (parentSymbol == CLASS_DEFINITION) {
+        indentation = style.indentation.classDefinitions;
+    } else {
         indentation = style.indentation.genericScope;
     }
     // TODO: add case blocks, need to check if a single case body statement,
