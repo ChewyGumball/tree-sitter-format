@@ -1,10 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/generators/catch_generators.hpp>
 
-#include <tree_sitter_format/Formatter.h>
+#include <tree_sitter_format/style/Style.h>
 #include <tree_sitter_format/traversers/IndentationTraverser.h>
+#include <tests/TestUtils.h>
 
 using namespace tree_sitter_format;
+using namespace testing;
 
 const std::string NONE = R"(
 namespace test 
@@ -86,22 +87,8 @@ const std::string BOTH_SAME_LINE = R"(
 namespace test {std::string s;}
 )";
 
-struct TestCase {
-    std::string inputLabel;
-    std::string inputValue;
-
-    std::string outputValue;
-};
-
-struct TestSuite {
-    Style::Indentation style;
-    std::string        styleLabel;
-
-    std::vector<TestCase> cases;
-};
-
-std::vector<TestSuite> TEST_CASES = {
-    {Style::Indentation::None, "None", {
+std::vector<TestSuite<Style::Indentation>> TEST_CASES = {
+    {Style::Indentation::None, {
             {"None",                            NONE,                            NONE},
             {"Braces Indented",                 BRACES_INDENTED,                 NONE},
             {"Body Indented",                   BODY_INDENTED,                   NONE},
@@ -117,7 +104,7 @@ std::vector<TestSuite> TEST_CASES = {
             {"Both Same Line",                  BOTH_SAME_LINE,                  BOTH_SAME_LINE},
         }
     },
-    {Style::Indentation::BracesIndented, "Braces Indented", {
+    {Style::Indentation::BracesIndented, {
             {"None",                            NONE,                            BRACES_INDENTED},
             {"Braces Indented",                 BRACES_INDENTED,                 BRACES_INDENTED},
             {"Body Indented",                   BODY_INDENTED,                   BRACES_INDENTED},
@@ -133,7 +120,7 @@ std::vector<TestSuite> TEST_CASES = {
             {"Both Same Line",                  BOTH_SAME_LINE,                  BOTH_SAME_LINE},
         }
     },
-    {Style::Indentation::BodyIndented, "Body Indented", {
+    {Style::Indentation::BodyIndented, {
             {"None",                            NONE,                            BODY_INDENTED},
             {"Braces Indented",                 BRACES_INDENTED,                 BODY_INDENTED},
             {"Body Indented",                   BODY_INDENTED,                   BODY_INDENTED},
@@ -149,7 +136,7 @@ std::vector<TestSuite> TEST_CASES = {
             {"Both Same Line",                  BOTH_SAME_LINE,                  BOTH_SAME_LINE},
         }
     },
-    {Style::Indentation::BothIndented, "Both Indented", {
+    {Style::Indentation::BothIndented, {
             {"None",                            NONE,                            BOTH_INDENTED},
             {"Braces Indented",                 BRACES_INDENTED,                 BOTH_INDENTED},
             {"Body Indented",                   BODY_INDENTED,                   BOTH_INDENTED},
@@ -169,24 +156,15 @@ std::vector<TestSuite> TEST_CASES = {
 
 
 TEST_CASE("Namespaces") {
-    Formatter formatter;
-    formatter.addTraverser(std::make_unique<IndentationTraverser>());
-
-    Style style;
-    style.indentation.whitespace = Style::IndentationWhitespace::Spaces;
-
-    for(TestSuite& suite : TEST_CASES) {
-        SECTION(suite.styleLabel) {
-            style.indentation.namespaces = suite.style;
-
-            for(TestCase& testCase : suite.cases) {
-                SECTION(testCase.inputLabel) {
-                    Document document(testCase.inputValue);
-                    formatter.format(style, document);
-
-                    REQUIRE(document.toString() == testCase.outputValue);
-                }
-            }
+    TestContext<Style::Indentation> context {
+        .styleNames = INDENTATION_NAMES,
+        .styleUpdater = [](Style& style, Style::Indentation indentation) {
+            style.indentation.namespaces = indentation;
         }
-    }
+    };
+
+    context.formatter.addTraverser(std::make_unique<IndentationTraverser>());
+    context.style.indentation.whitespace = Style::IndentationWhitespace::Spaces;
+
+    RunTest(context, TEST_CASES);
 }

@@ -1,9 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <tree_sitter_format/Formatter.h>
+#include <tree_sitter_format/style/Style.h>
 #include <tree_sitter_format/traversers/IndentationTraverser.h>
+#include <tests/TestUtils.h>
 
 using namespace tree_sitter_format;
+using namespace testing;
 
 const std::string NONE = R"(
 for(int i = 0; i < 10; i++)
@@ -33,139 +35,136 @@ for(int i = 0; i < 10; i++)
     }
 )";
 
+const std::string NONE_START_SAME_LINE = R"(
+for(int i = 0; i < 10; i++) {
+int a;
+}
+)";
 
-TEST_CASE("For Loops") {
-    Formatter formatter;
-    formatter.addTraverser(std::make_unique<IndentationTraverser>());
-
-    Style style;
-    style.indentation.whitespace = Style::IndentationWhitespace::Spaces;
-
-    SECTION("Output: None") {
-        style.indentation.forLoops = Style::Indentation::None;
-
-        SECTION("Input: None") {
-            Document document(NONE);
-            formatter.format(style, document);
-
-            REQUIRE(document.toString() == NONE);
-        }
-        
-        SECTION("Input: Braces Indented") {
-            Document document(BRACES_INDENTED);
-            formatter.format(style, document);
-
-            REQUIRE(document.toString() == NONE);
-        }
-        
-        SECTION("Input: Body Indented") {
-            Document document(BODY_INDENTED);
-            formatter.format(style, document);
-
-            REQUIRE(document.toString() == NONE);
-        }
-        
-        SECTION("Input: Both Indented") {
-            Document document(BOTH_INDENTED);
-            formatter.format(style, document);
-
-            REQUIRE(document.toString() == NONE);
-        }
+const std::string BRACES_INDENTED_START_SAME_LINE = R"(
+for(int i = 0; i < 10; i++) {
+    int a;
     }
+)";
 
-    SECTION("Output: Braces Indented") {
-        style.indentation.forLoops = Style::Indentation::BracesIndented;
+const std::string BODY_INDENTED_START_SAME_LINE = R"(
+for(int i = 0; i < 10; i++) {
+    int a;
+}
+)";
 
-        SECTION("Input: None") {
-            Document document(NONE);
-            formatter.format(style, document);
-
-            REQUIRE(document.toString() == BRACES_INDENTED);
-        }
-        
-        SECTION("Input: Braces Indented") {
-            Document document(BRACES_INDENTED);
-            formatter.format(style, document);
-
-            REQUIRE(document.toString() == BRACES_INDENTED);
-        }
-        
-        SECTION("Input: Body Indented") {
-            Document document(BODY_INDENTED);
-            formatter.format(style, document);
-
-            REQUIRE(document.toString() == BRACES_INDENTED);
-        }
-        
-        SECTION("Input: Both Indented") {
-            Document document(BOTH_INDENTED);
-            formatter.format(style, document);
-
-            REQUIRE(document.toString() == BRACES_INDENTED);
-        }
+const std::string BOTH_INDENTED_START_SAME_LINE = R"(
+for(int i = 0; i < 10; i++) {
+        int a;
     }
-    
-    SECTION("Output: Body Indented") {
-        style.indentation.forLoops = Style::Indentation::BodyIndented;
+)";
 
-        SECTION("Input: None") {
-            Document document(NONE);
-            formatter.format(style, document);
+const std::string NONE_END_SAME_LINE = R"(
+for(int i = 0; i < 10; i++)
+{
+int a;}
+)";
 
-            REQUIRE(document.toString() == BODY_INDENTED);
+const std::string BRACES_INDENTED_END_SAME_LINE = R"(
+for(int i = 0; i < 10; i++)
+    {
+    int a;}
+)";
+
+const std::string BODY_INDENTED_END_SAME_LINE = R"(
+for(int i = 0; i < 10; i++)
+{
+    int a;}
+)";
+
+const std::string BOTH_INDENTED_END_SAME_LINE = R"(
+for(int i = 0; i < 10; i++)
+    {
+        int a;}
+)";
+
+const std::string BOTH_SAME_LINE = R"(
+for(int i = 0; i < 10; i++) {int a;}
+)";
+
+std::vector<TestSuite<Style::Indentation>> TEST_CASES {
+    {Style::Indentation::None, {
+            {"None",                            NONE,                            NONE},
+            {"Braces Indented",                 BRACES_INDENTED,                 NONE},
+            {"Body Indented",                   BODY_INDENTED,                   NONE},
+            {"Both Indented",                   BOTH_INDENTED,                   NONE},
+            {"None Start Same Line",            NONE_START_SAME_LINE,            NONE_START_SAME_LINE},
+            {"Braces Indented Start Same Line", BRACES_INDENTED_START_SAME_LINE, NONE_START_SAME_LINE},
+            {"Body Indented Start Same Line",   BODY_INDENTED_START_SAME_LINE,   NONE_START_SAME_LINE},
+            {"Both Indented Start Same Line",   BOTH_INDENTED_START_SAME_LINE,   NONE_START_SAME_LINE},
+            {"None End Same Line",              NONE_END_SAME_LINE,              NONE_END_SAME_LINE},
+            {"Braces Indented End Same Line",   BRACES_INDENTED_END_SAME_LINE,   NONE_END_SAME_LINE},
+            {"Body Indented End Same Line",     BODY_INDENTED_END_SAME_LINE,     NONE_END_SAME_LINE},
+            {"Both Indented End Same Line",     BOTH_INDENTED_END_SAME_LINE,     NONE_END_SAME_LINE},
+            {"Both Same Line",                  BOTH_SAME_LINE,                  BOTH_SAME_LINE},
         }
-        
-        SECTION("Input: Braces Indented") {
-            Document document(BRACES_INDENTED);
-            formatter.format(style, document);
-
-            REQUIRE(document.toString() == BODY_INDENTED);
+    },
+    {Style::Indentation::BracesIndented, {
+            {"None",                            NONE,                            BRACES_INDENTED},
+            {"Braces Indented",                 BRACES_INDENTED,                 BRACES_INDENTED},
+            {"Body Indented",                   BODY_INDENTED,                   BRACES_INDENTED},
+            {"Both Indented",                   BOTH_INDENTED,                   BRACES_INDENTED},
+            {"None Start Same Line",            NONE_START_SAME_LINE,            BRACES_INDENTED_START_SAME_LINE},
+            {"Braces Indented Start Same Line", BRACES_INDENTED_START_SAME_LINE, BRACES_INDENTED_START_SAME_LINE},
+            {"Body Indented Start Same Line",   BODY_INDENTED_START_SAME_LINE,   BRACES_INDENTED_START_SAME_LINE},
+            {"Both Indented Start Same Line",   BOTH_INDENTED_START_SAME_LINE,   BRACES_INDENTED_START_SAME_LINE},
+            {"None End Same Line",              NONE_END_SAME_LINE,              BRACES_INDENTED_END_SAME_LINE},
+            {"Braces Indented End Same Line",   BRACES_INDENTED_END_SAME_LINE,   BRACES_INDENTED_END_SAME_LINE},
+            {"Body Indented End Same Line",     BODY_INDENTED_END_SAME_LINE,     BRACES_INDENTED_END_SAME_LINE},
+            {"Both Indented End Same Line",     BOTH_INDENTED_END_SAME_LINE,     BRACES_INDENTED_END_SAME_LINE},
+            {"Both Same Line",                  BOTH_SAME_LINE,                  BOTH_SAME_LINE},
         }
-        
-        SECTION("Input: Body Indented") {
-            Document document(BODY_INDENTED);
-            formatter.format(style, document);
-
-            REQUIRE(document.toString() == BODY_INDENTED);
+    },
+    {Style::Indentation::BodyIndented, {
+            {"None",                            NONE,                            BODY_INDENTED},
+            {"Braces Indented",                 BRACES_INDENTED,                 BODY_INDENTED},
+            {"Body Indented",                   BODY_INDENTED,                   BODY_INDENTED},
+            {"Both Indented",                   BOTH_INDENTED,                   BODY_INDENTED},
+            {"None Start Same Line",            NONE_START_SAME_LINE,            BODY_INDENTED_START_SAME_LINE},
+            {"Braces Indented Start Same Line", BRACES_INDENTED_START_SAME_LINE, BODY_INDENTED_START_SAME_LINE},
+            {"Body Indented Start Same Line",   BODY_INDENTED_START_SAME_LINE,   BODY_INDENTED_START_SAME_LINE},
+            {"Both Indented Start Same Line",   BOTH_INDENTED_START_SAME_LINE,   BODY_INDENTED_START_SAME_LINE},
+            {"None End Same Line",              NONE_END_SAME_LINE,              BODY_INDENTED_END_SAME_LINE},
+            {"Braces Indented End Same Line",   BRACES_INDENTED_END_SAME_LINE,   BODY_INDENTED_END_SAME_LINE},
+            {"Body Indented End Same Line",     BODY_INDENTED_END_SAME_LINE,     BODY_INDENTED_END_SAME_LINE},
+            {"Both Indented End Same Line",     BOTH_INDENTED_END_SAME_LINE,     BODY_INDENTED_END_SAME_LINE},
+            {"Both Same Line",                  BOTH_SAME_LINE,                  BOTH_SAME_LINE},
         }
-        
-        SECTION("Input: Both Indented") {
-            Document document(BOTH_INDENTED);
-            formatter.format(style, document);
-
-            REQUIRE(document.toString() == BODY_INDENTED);
+    },
+    {Style::Indentation::BothIndented, {
+            {"None",                            NONE,                            BOTH_INDENTED},
+            {"Braces Indented",                 BRACES_INDENTED,                 BOTH_INDENTED},
+            {"Body Indented",                   BODY_INDENTED,                   BOTH_INDENTED},
+            {"Both Indented",                   BOTH_INDENTED,                   BOTH_INDENTED},
+            {"None Start Same Line",            NONE_START_SAME_LINE,            BOTH_INDENTED_START_SAME_LINE},
+            {"Braces Indented Start Same Line", BRACES_INDENTED_START_SAME_LINE, BOTH_INDENTED_START_SAME_LINE},
+            {"Body Indented Start Same Line",   BODY_INDENTED_START_SAME_LINE,   BOTH_INDENTED_START_SAME_LINE},
+            {"Both Indented Start Same Line",   BOTH_INDENTED_START_SAME_LINE,   BOTH_INDENTED_START_SAME_LINE},
+            {"None End Same Line",              NONE_END_SAME_LINE,              BOTH_INDENTED_END_SAME_LINE},
+            {"Braces Indented End Same Line",   BRACES_INDENTED_END_SAME_LINE,   BOTH_INDENTED_END_SAME_LINE},
+            {"Body Indented End Same Line",     BODY_INDENTED_END_SAME_LINE,     BOTH_INDENTED_END_SAME_LINE},
+            {"Both Indented End Same Line",     BOTH_INDENTED_END_SAME_LINE,     BOTH_INDENTED_END_SAME_LINE},
+            {"Both Same Line",                  BOTH_SAME_LINE,                  BOTH_SAME_LINE},
         }
-    }
-    
-    SECTION("Output: Both Indented") {
-        style.indentation.forLoops = Style::Indentation::BothIndented;
+    },
+};
 
-        SECTION("Input: None") {
-            Document document(NONE);
-            formatter.format(style, document);
 
-            REQUIRE(document.toString() == BOTH_INDENTED);
+TEST_CASE("For Loops") {    
+    TestContext<Style::Indentation> context {
+        .styleNames = INDENTATION_NAMES,
+        .styleUpdater = [](Style& style, Style::Indentation indentation) {
+            style.indentation.forLoops = indentation;
         }
-        
-        SECTION("Input: Braces Indented") {
-            Document document(BRACES_INDENTED);
-            formatter.format(style, document);
+    };
 
-            REQUIRE(document.toString() == BOTH_INDENTED);
-        }
-        
-        SECTION("Input: Body Indented") {
-            Document document(BODY_INDENTED);
-            formatter.format(style, document);
+    context.formatter.addTraverser(std::make_unique<IndentationTraverser>());
+    context.style.indentation.whitespace = Style::IndentationWhitespace::Spaces;
 
-            REQUIRE(document.toString() == BOTH_INDENTED);
-        }
-        
-        SECTION("Input: Both Indented") {
-            Document document(BOTH_INDENTED);
-            formatter.format(style, document);
-
-            REQUIRE(document.toString() == BOTH_INDENTED);
-        }
-    }
+    RunTest(context, TEST_CASES);
 }
