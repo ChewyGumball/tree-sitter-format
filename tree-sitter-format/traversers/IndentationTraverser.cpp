@@ -63,7 +63,7 @@ ScopeChange IfStatementScopeChange(TSNode node, uint32_t childIndex, const Style
     // scope as if it were a child because that would indent it.
     //
     // IE, we want:
-    //  if (true) {
+    // if (true) {
     //     int a;
     // } else if (false) {
     //     int b;
@@ -72,7 +72,7 @@ ScopeChange IfStatementScopeChange(TSNode node, uint32_t childIndex, const Style
     // not:
     //  if (true) {
     //     int a;
-    // } else if (false) {
+    //  } else if (false) {
     //         int b;
     //     }
 

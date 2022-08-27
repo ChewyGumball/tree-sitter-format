@@ -80,3 +80,12 @@ tsf_cc_test(
         "//tests:test_utils",
     ]
 )
+
+tsf_cc_test(
+    name = "switch_statements",
+    srcs = ["SwitchStatements.cpp"],
+    deps = [
+        "//tree-sitter-format:indentation_traverser",
+        "//tests:test_utils",
+    ]
+)

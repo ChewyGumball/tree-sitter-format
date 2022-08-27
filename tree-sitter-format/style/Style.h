@@ -21,7 +21,7 @@ struct Style {
         /**/Indentation structDefinitions = Indentation::BodyIndented;
         /**/Indentation classDefinitions = Indentation::BodyIndented;
         /**/Indentation ifStatements = Indentation::BodyIndented;
-        Indentation switchStatements = Indentation::BodyIndented;
+        /**/Indentation switchStatements = Indentation::BodyIndented;
         Indentation caseBlocks = Indentation::BodyIndented;
         /**/Indentation whileLoops = Indentation::BodyIndented;
         /**/Indentation doWhileLoops = Indentation::BodyIndented;
