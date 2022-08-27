@@ -17,6 +17,7 @@ inline const TSSymbol FUNCTION_DEFINITION = ts_language_symbol_for_name(tree_sit
 inline const TSSymbol SWITCH_STATEMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "switch_statement", 16, true);
 inline const TSSymbol CASE_STATEMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "case_statement", 14, true);
 inline const TSSymbol NAMESPACE = ts_language_symbol_for_name(tree_sitter_cpp(), "namespace_definition", 20, true);
+inline const TSSymbol STRUCT_DEFINITION = ts_language_symbol_for_name(tree_sitter_cpp(), "struct_specifier", 16, true);
 
 inline const TSSymbol DECLARATION = ts_language_symbol_for_name(tree_sitter_cpp(), "declaration", 11, true);
 

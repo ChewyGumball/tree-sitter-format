@@ -20,6 +20,12 @@ std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
 }
 
 enum class ScopeChange { None, IncreaseBefore, DecreaseAfter, Both };
+
+bool IsCompoundStatementLike(TSSymbol symbol) {
+    return symbol == COMPOUND_STATEMENT ||
+           symbol == DECLARATION_LIST ||
+           symbol == FIELD_DECLARATION_LIST;
+}
     
 template<size_t COUNT>
 ScopeChange NonCompoundBodyScopeChange(TSNode node, uint32_t childIndex, const std::string_view (&allowedFieldNames)[COUNT], Style::Indentation allowedIndentation) {
@@ -32,7 +38,7 @@ ScopeChange NonCompoundBodyScopeChange(TSNode node, uint32_t childIndex, const s
             // Compound Statements handle their own indentation so they can be handled uniformly
             // Declaration Lists are handled the same as Compound Statements, but the grammar
             // requires they be different node types.
-            if (childSymbol == COMPOUND_STATEMENT || childSymbol == DECLARATION_LIST) {
+            if (IsCompoundStatementLike(childSymbol)) {
                 return ScopeChange::None;
             }
             
@@ -87,7 +93,9 @@ ScopeChange CompoundStatementScopeChange(TSNode node, uint32_t childIndex, const
         indentation = style.indentation.switchStatements;
     }  else if (parentSymbol == NAMESPACE) {
         indentation = style.indentation.namespaces;
-    } else {
+    }  else if (parentSymbol == STRUCT_DEFINITION) {
+        indentation = style.indentation.structDefinitions;
+    }  else {
         indentation = style.indentation.genericScope;
     }
     // TODO: add case blocks, need to check if a single case body statement,
@@ -167,7 +175,7 @@ ScopeChange ScopeChangeForChild(TSNode node, uint32_t childIndex, const Style& s
         return WhileLoopScopeChange(node, childIndex, style);
     } else if (symbol == DO_WHILE_LOOP) {
         return DoWhileLoopScopeChange(node, childIndex, style);
-    } else if (symbol == COMPOUND_STATEMENT || symbol == DECLARATION_LIST) {
+    } else if (IsCompoundStatementLike(symbol)) {
         // This handles things that are enclosed in { and }
         // There are multiple grammar symbols that are handled the same way
         // but we will just refer to them all as compound statements.
