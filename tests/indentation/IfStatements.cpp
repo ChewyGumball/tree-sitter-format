@@ -382,7 +382,7 @@ if(false)
 {
 int a;
 }
-else if
+else if(true)
 {
 int c;
 }
@@ -397,7 +397,7 @@ if(false)
     {
     int a;
     }
-else if
+else if(true)
     {
     int c;
     }
@@ -412,7 +412,7 @@ if(false)
 {
     int a;
 }
-else
+else if(true)
 {
     int c;
 }
@@ -427,7 +427,7 @@ if(false)
     {
         int a;
     }
-else if
+else if(true)
     {
         int c;
     }
@@ -440,7 +440,7 @@ else
 const std::string IF_ELSEIF_ELSE_NONE_START_SAME_LINE = R"(
 if(false) {
 int a;
-} else if {
+} else if(true) {
 int c;
 } else {
 int b;
@@ -450,7 +450,7 @@ int b;
 const std::string IF_ELSEIF_ELSE_BRACES_INDENTED_START_SAME_LINE = R"(
 if(false) {
     int a;
-    } else if {
+    } else if(true) {
     int c;
     } else {
     int b;
@@ -460,7 +460,7 @@ if(false) {
 const std::string IF_ELSEIF_ELSE_BODY_INDENTED_START_SAME_LINE = R"(
 if(false) {
     int a;
-} else if {
+} else if(true) {
     int c;
 } else {
     int b;
@@ -470,7 +470,7 @@ if(false) {
 const std::string IF_ELSEIF_ELSE_BOTH_INDENTED_START_SAME_LINE = R"(
 if(false) {
         int a;
-    } else if {
+    } else if(true) {
         int c;
     } else {
         int b;
@@ -480,8 +480,8 @@ if(false) {
 const std::string IF_ELSEIF_ELSE_NONE_END_SAME_LINE = R"(
 if(false)
 {
-int a;} else if
-{ 
+int a;} else if(true)
+{
 int c;} else
 {
 int b;}
@@ -490,7 +490,7 @@ int b;}
 const std::string IF_ELSEIF_ELSE_BRACES_INDENTED_END_SAME_LINE = R"(
 if(false)
     {
-    int a;} else if
+    int a;} else if(true)
     {
     int c;} else
     {
@@ -500,7 +500,7 @@ if(false)
 const std::string IF_ELSEIF_ELSE_BODY_INDENTED_END_SAME_LINE = R"(
 if(false)
 {
-    int a;} else if
+    int a;} else if(true)
 {
     int c;} else
 {
@@ -510,7 +510,7 @@ if(false)
 const std::string IF_ELSEIF_ELSE_BOTH_INDENTED_END_SAME_LINE = R"(
 if(false)
     {
-        int a;} else if
+        int a;} else if(true)
     {
         int c;} else
     {
@@ -519,7 +519,7 @@ if(false)
 
 const std::string IF_ELSEIF_ELSE_BOTH_SAME_LINE = R"(
 if(false) {int a;}
-else if {int c;}
+else if(true) {int c;}
 else {int b;}
 )";
 
