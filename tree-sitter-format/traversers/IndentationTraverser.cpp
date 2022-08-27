@@ -55,6 +55,37 @@ ScopeChange NonCompoundBodyScopeChange(TSNode node, uint32_t childIndex, const s
 
 ScopeChange IfStatementScopeChange(TSNode node, uint32_t childIndex, const Style& style) {
     assert(ts_node_symbol(node) == IF_STATEMENT);
+
+    // There is a special case for if statement alternatives (aka, the "else" part). If
+    // the alternative is a single statement, and that statement is an "if" statement,
+    // don't increase the scope because it is an "else if". The grammar considers the 
+    // "if" part of an "else if" to be a child node, but we don't want to change the
+    // scope as if it were a child because that would indent it.
+    //
+    // IE, we want:
+    //  if (true) {
+    //     int a;
+    // } else if (false) {
+    //     int b;
+    // }
+    //
+    // not:
+    //  if (true) {
+    //     int a;
+    // } else if (false) {
+    //         int b;
+    //     }
+
+    std::string_view fieldName = ChildFieldName(node, childIndex);
+    if (fieldName == "alternative") {
+        TSNode child = ts_node_child(node, childIndex);
+        TSSymbol childSymbol = ts_node_symbol(child);
+
+        if (childSymbol == IF_STATEMENT) {
+            return ScopeChange::None;
+        }
+    }
+
     return NonCompoundBodyScopeChange(node, childIndex, {"consequence"sv, "alternative"sv}, style.indentation.ifStatements);
 }
 
