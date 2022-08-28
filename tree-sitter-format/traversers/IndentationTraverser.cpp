@@ -21,14 +21,27 @@ std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
 
 enum class ScopeChange { None, IncreaseBefore, DecreaseAfter, Both };
 
-bool IsCompoundStatementLike(TSSymbol symbol) {
+[[nodiscard]] bool IsCompoundStatementLike(TSSymbol symbol) {
     return symbol == COMPOUND_STATEMENT ||
            symbol == DECLARATION_LIST ||
            symbol == FIELD_DECLARATION_LIST;
 }
+
+[[nodiscard]] bool IsCaseWithSingleStatementBody(TSNode node) {
+    TSSymbol symbol = ts_node_symbol(node);
+
+    if (symbol == CASE_STATEMENT) {
+        uint32_t childCount = ts_node_child_count(node);
+        bool isDefaultCase = !ts_node_is_named(ts_node_child(node, 1));
+
+        return childCount == (isDefaultCase ? 3u : 4u);
+    }
+
+    return false;
+}
     
 template<size_t COUNT>
-ScopeChange NonCompoundBodyScopeChange(TSNode node, uint32_t childIndex, const std::string_view (&allowedFieldNames)[COUNT], Style::Indentation allowedIndentation) {
+[[nodiscard]] ScopeChange NonCompoundBodyScopeChange(TSNode node, uint32_t childIndex, const std::string_view (&allowedFieldNames)[COUNT], Style::Indentation allowedIndentation) {
     std::string_view fieldName = ChildFieldName(node, childIndex);
     for(auto allowedName : allowedFieldNames) {
         if (fieldName == allowedName) {
@@ -53,7 +66,7 @@ ScopeChange NonCompoundBodyScopeChange(TSNode node, uint32_t childIndex, const s
     return ScopeChange::None;
 }
 
-ScopeChange IfStatementScopeChange(TSNode node, uint32_t childIndex, const Style& style) {
+[[nodiscard]] ScopeChange IfStatementScopeChange(TSNode node, uint32_t childIndex, const Style& style) {
     assert(ts_node_symbol(node) == IF_STATEMENT);
 
     // There is a special case for if statement alternatives (aka, the "else" part). If
@@ -89,17 +102,66 @@ ScopeChange IfStatementScopeChange(TSNode node, uint32_t childIndex, const Style
     return NonCompoundBodyScopeChange(node, childIndex, {"consequence"sv, "alternative"sv}, style.indentation.ifStatements);
 }
 
-ScopeChange WhileLoopScopeChange(TSNode node, uint32_t childIndex, const Style& style) {
+[[nodiscard]] ScopeChange WhileLoopScopeChange(TSNode node, uint32_t childIndex, const Style& style) {
     assert(ts_node_symbol(node) == WHILE_LOOP);
     return NonCompoundBodyScopeChange(node, childIndex, {"body"sv}, style.indentation.whileLoops);
 }
 
-ScopeChange DoWhileLoopScopeChange(TSNode node, uint32_t childIndex, const Style& style) {
+[[nodiscard]] ScopeChange DoWhileLoopScopeChange(TSNode node, uint32_t childIndex, const Style& style) {
     assert(ts_node_symbol(node) == DO_WHILE_LOOP);
     return NonCompoundBodyScopeChange(node, childIndex, {"body"sv}, style.indentation.whileLoops);
 }
 
-ScopeChange CompoundStatementScopeChange(TSNode node, uint32_t childIndex, const Style& style) {
+[[nodiscard]] ScopeChange CaseScopeChange(TSNode node, uint32_t childIndex, const Style& style) {
+    assert(ts_node_symbol(node) == CASE_STATEMENT);
+
+    uint32_t childCount = ts_node_child_count(node);
+    bool isDefaultCase = !ts_node_is_named(ts_node_child(node, 1));
+
+    uint32_t firstBodyChildIndex = isDefaultCase ? 2 : 3;
+    uint32_t lastBodyChildIndex = childCount - 1;
+
+    // If there is no body. For example:
+    //
+    //  switch (s) {
+    //     case 1:
+    //     case 2: {
+    //        func(s);
+    //     }
+    //  }
+    //
+    // The first case has no body.
+    if (childCount < firstBodyChildIndex) {
+        return ScopeChange::None;
+    }
+
+    bool singleStatementBody = firstBodyChildIndex == lastBodyChildIndex;
+    if (singleStatementBody && (childIndex == firstBodyChildIndex)) {
+        TSSymbol bodySymbol = ts_node_symbol(ts_node_child(node, childIndex));
+
+        // If there is only one body statement AND it isn't a compound statement, indent it.
+        if (bodySymbol != COMPOUND_STATEMENT && style.indentation.caseBlocks != Style::Indentation::None) {
+            return ScopeChange::Both;
+        } else {
+            // Otherwise it is a compound statement, and it will handle its own indentation, or the style
+            // didn't want to indent it.
+            return ScopeChange::None;
+        }
+    }
+
+    if (childIndex == firstBodyChildIndex && style.indentation.caseBlocks != Style::Indentation::None) {
+        return ScopeChange::IncreaseBefore;
+    }
+
+    if (childIndex == lastBodyChildIndex && style.indentation.caseBlocks != Style::Indentation::None) {
+        return ScopeChange::DecreaseAfter;
+    }
+
+    return ScopeChange::None;
+
+}
+
+[[nodiscard]] ScopeChange CompoundStatementScopeChange(TSNode node, uint32_t childIndex, const Style& style) {
     // Compound statements are '{', (statement), ... , '}'
     // There may be no (statement) nodes, ie an empty block
 
@@ -128,6 +190,10 @@ ScopeChange CompoundStatementScopeChange(TSNode node, uint32_t childIndex, const
         indentation = style.indentation.structDefinitions;
     } else if (parentSymbol == CLASS_DEFINITION) {
         indentation = style.indentation.classDefinitions;
+    } else if (IsCaseWithSingleStatementBody(parent) && childIndex == (ts_node_child_count(parent) - 1)) {
+        // We only treat compound statements in case statements specially if they are the only statement in
+        // it's body. Otherwise its just a normal block.
+        indentation = style.indentation.caseBlocks;
     } else {
         indentation = style.indentation.genericScope;
     }
@@ -208,6 +274,8 @@ ScopeChange ScopeChangeForChild(TSNode node, uint32_t childIndex, const Style& s
         return WhileLoopScopeChange(node, childIndex, style);
     } else if (symbol == DO_WHILE_LOOP) {
         return DoWhileLoopScopeChange(node, childIndex, style);
+    } else if (symbol == CASE_STATEMENT) {
+        return CaseScopeChange(node, childIndex, style);
     } else if (IsCompoundStatementLike(symbol)) {
         // This handles things that are enclosed in { and }
         // There are multiple grammar symbols that are handled the same way
