@@ -190,15 +190,13 @@ template<size_t COUNT>
         indentation = style.indentation.structDefinitions;
     } else if (parentSymbol == CLASS_DEFINITION) {
         indentation = style.indentation.classDefinitions;
-    } else if (IsCaseWithSingleStatementBody(parent) && childIndex == (ts_node_child_count(parent) - 1)) {
+    } else if (IsCaseWithSingleStatementBody(parent)) {
         // We only treat compound statements in case statements specially if they are the only statement in
         // it's body. Otherwise its just a normal block.
         indentation = style.indentation.caseBlocks;
     } else {
         indentation = style.indentation.genericScope;
     }
-    // TODO: add case blocks, need to check if a single case body statement,
-    //  otherwise its just a generic scope.
 
     // We are the opening brace
     if (childIndex == 0) {
