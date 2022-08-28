@@ -16,16 +16,16 @@ struct Style {
     enum class Indentation { BracesIndented, BodyIndented, BothIndented, None };
 
     struct {
-        /**/Indentation namespaces = Indentation::None;
-        /**/Indentation functionDefinitions = Indentation::BodyIndented;
-        /**/Indentation structDefinitions = Indentation::BodyIndented;
-        /**/Indentation classDefinitions = Indentation::BodyIndented;
-        /**/Indentation ifStatements = Indentation::BodyIndented;
-        /**/Indentation switchStatements = Indentation::BodyIndented;
+        Indentation namespaces = Indentation::None;
+        Indentation functionDefinitions = Indentation::BodyIndented;
+        Indentation structDefinitions = Indentation::BodyIndented;
+        Indentation classDefinitions = Indentation::BodyIndented;
+        Indentation ifStatements = Indentation::BodyIndented;
+        Indentation switchStatements = Indentation::BodyIndented;
         Indentation caseBlocks = Indentation::BodyIndented;
-        /**/Indentation whileLoops = Indentation::BodyIndented;
-        /**/Indentation doWhileLoops = Indentation::BodyIndented;
-        /**/Indentation forLoops = Indentation::BodyIndented;
+        Indentation whileLoops = Indentation::BodyIndented;
+        Indentation doWhileLoops = Indentation::BodyIndented;
+        Indentation forLoops = Indentation::BodyIndented;
         Indentation genericScope = Indentation::BodyIndented;
 
         IndentationWhitespace whitespace = IndentationWhitespace::Spaces;
