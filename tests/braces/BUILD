@@ -6,5 +6,6 @@ tsf_cc_test(
     deps = [
         "//tree-sitter-format:formatter",
         "//tree-sitter-format:bracket_existance_traverser",
+        "//tests:test_utils",
     ]
 )
