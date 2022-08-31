@@ -98,3 +98,12 @@ tsf_cc_test(
         "//tests:test_utils",
     ]
 )
+
+tsf_cc_test(
+    name = "generic_scope",
+    srcs = ["GenericScope.cpp"],
+    deps = [
+        "//tree-sitter-format:indentation_traverser",
+        "//tests:test_utils",
+    ]
+)
