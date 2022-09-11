@@ -17,3 +17,48 @@ tsf_cc_test(
         "//tests:test_utils",
     ]
 )
+
+tsf_cc_test(
+    name = "for_each_loops",
+    srcs = ["ForEachLoops.cpp"],
+    deps = [
+        "//tree-sitter-format:bracket_existance_traverser",
+        "//tests:test_utils",
+    ]
+)
+
+tsf_cc_test(
+    name = "while_loops",
+    srcs = ["WhileLoops.cpp"],
+    deps = [
+        "//tree-sitter-format:bracket_existance_traverser",
+        "//tests:test_utils",
+    ]
+)
+
+tsf_cc_test(
+    name = "do_while_loops",
+    srcs = ["DoWhileLoops.cpp"],
+    deps = [
+        "//tree-sitter-format:bracket_existance_traverser",
+        "//tests:test_utils",
+    ]
+)
+
+tsf_cc_test(
+    name = "switch_statements",
+    srcs = ["SwitchStatements.cpp"],
+    deps = [
+        "//tree-sitter-format:bracket_existance_traverser",
+        "//tests:test_utils",
+    ]
+)
+
+tsf_cc_test(
+    name = "case_statements",
+    srcs = ["CaseStatements.cpp"],
+    deps = [
+        "//tree-sitter-format:bracket_existance_traverser",
+        "//tests:test_utils",
+    ]
+)
