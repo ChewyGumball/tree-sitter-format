@@ -45,6 +45,34 @@ void IfStatementEdits(TSNode node, uint32_t childIndex, TraverserContext& contex
         return;
     }
 
+    // There is a special case for if statement alternatives (aka, the "else" part). If
+    // the alternative is a single statement, and that statement is an "if" statement,
+    // don't increase the scope because it is an "else if". The grammar considers the 
+    // "if" part of an "else if" to be a child node, but we don't want to add braces
+    // around the if
+    //
+    // IE, we want:
+    // if (true) {
+    //     int a;
+    // } else if (false) {
+    //     int b;
+    // }
+    //
+    // not:
+    //  if (true) {
+    //     int a;
+    //  } else {if (false) {
+    //     int b;
+    //  }}
+    if (fieldName == "alternative") {
+        TSNode child = ts_node_child(node, childIndex);
+        TSSymbol childSymbol = ts_node_symbol(child);
+
+        if (childSymbol == IF_STATEMENT) {
+            return;
+        }
+    }
+
     HandleCompoundChild(node, childIndex, context, context.style.braces.ifStatements);
 }
 
