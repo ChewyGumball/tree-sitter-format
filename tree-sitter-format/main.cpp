@@ -23,16 +23,12 @@ using namespace std::literals::string_view_literals;
 
 using namespace tree_sitter_format;
 
-const std::filesystem::path inputFileName = "C:/Users/bpdun/Desktop/test/test.cpp";
-const std::filesystem::path outputFileName = "C:/Users/bpdun/Desktop/test/test.cpp.out";
+const std::filesystem::path inputFileName = "G:/Projects/tree-sitter-format/tree-sitter-format/traversers/BracketExistanceTraverser.cpp";
+const std::filesystem::path outputFileName = "G:/Projects/tree-sitter-format/tree-sitter-format/traversers/BracketExistanceTraverser.cpp";
 
 int main() {
     using namespace tree_sitter_format;
     Style style;
-
-    style.indentation.indentationAmount = 1;
-    style.indentation.whitespace = Style::IndentationWhitespace::Tabs;
-    style.braces.ifStatements = Style::BraceExistance::Require;
 
     Document document(inputFileName);
     std::cout << "Input Text: " << std::endl << document << std::endl;

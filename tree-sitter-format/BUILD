@@ -84,6 +84,7 @@ tsf_cc_library(
     hdrs = ["style/Style.h"],
     srcs = ["style/Style.cpp"],
     include_prefix = "tree_sitter_format",
+    deps = ["@yaml-cpp"],
 )
 
 tsf_cc_library(

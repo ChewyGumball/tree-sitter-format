@@ -30,7 +30,7 @@ void HandleCompoundChild(TSNode node, uint32_t childIndex, TraverserContext& con
 
             TSNode endBrace = ts_node_child(child, 2);
             context.edits.push_back(DeleteEdit {.range = Range::Of(endBrace)});
-        }       
+        }
     } else if (style == Style::BraceExistance::Require) {
         // Insert open and close braces because the style requires they exist but this block doesn't have them
         context.edits.push_back(InsertEdit{.position = Position::StartOf(child), .bytes = "{"sv});
@@ -171,7 +171,7 @@ void BracketExistanceTraverser::preVisitChild(TSNode node, uint32_t childIndex, 
     TSSymbol symbol = ts_node_symbol(node);
 
     if (symbol == IF_STATEMENT) {
-         IfStatementEdits(node, childIndex, context);
+        IfStatementEdits(node, childIndex, context);
     } else if (symbol == WHILE_LOOP) {
         WhileLoopEdits(node, childIndex, context);
     } else if (symbol == DO_WHILE_LOOP) {

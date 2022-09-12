@@ -11,7 +11,6 @@ struct BraceStyle {
 
 
 struct Style {
-    enum class Whitespace { Space, Newline, Ignore, None };
     enum class IndentationWhitespace { Spaces, Tabs };
     enum class Indentation { BracesIndented, BodyIndented, BothIndented, None };
 
@@ -47,6 +46,8 @@ struct Style {
         BraceExistance switchStatements = BraceExistance::Require;
     } braces;
 
+    enum class Whitespace { Space, Newline, Ignore, None };
+    enum class RequiredWhitespace { Space, Newline, Ignore };
     struct WhitespacePlacement {
         Whitespace before;
         Whitespace after;
@@ -161,6 +162,8 @@ struct Style {
                 .before = Whitespace::None,
                 .after = Whitespace::Space,
             };
+
+            RequiredWhitespace returnType;
         } functionDeclarations;
 
         struct {
@@ -190,6 +193,8 @@ struct Style {
                     .after = Whitespace::Newline,
                 },
             };
+            
+            RequiredWhitespace returnType;
         } functionDefinitions;
 
         struct {
@@ -404,6 +409,13 @@ struct Style {
             };
         } caseStatements;
 
+        struct {
+            WhitespacePlacement colon {
+                .before = Whitespace::None,
+                .after = Whitespace::Space,
+            };
+        } bitFields;
+
         WhitespacePlacement binaryOperator {
             .before = Whitespace::Space,
             .after = Whitespace::Space,
@@ -415,6 +427,9 @@ struct Style {
     } spacing;
     
     std::string_view newLineString() const;
+
+    static Style FromClangFormat(const std::string& config);
+    static Style FromTreeSitterFormat(const std::string& config);
 };
 
 }
