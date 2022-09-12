@@ -11,6 +11,8 @@ struct BraceStyle {
 
 
 struct Style {
+    uint32_t targetLineLength = 120;
+
     enum class IndentationWhitespace { Spaces, Tabs };
     enum class Indentation { BracesIndented, BodyIndented, BothIndented, None };
 
@@ -26,6 +28,7 @@ struct Style {
         Indentation doWhileLoops = Indentation::BodyIndented;
         Indentation forLoops = Indentation::BodyIndented;
         Indentation genericScope = Indentation::BodyIndented;
+        Indentation tryCatch = Indentation::BodyIndented;
 
         IndentationWhitespace whitespace = IndentationWhitespace::Spaces;
         uint32_t indentationAmount = 4;
@@ -44,6 +47,7 @@ struct Style {
         BraceExistance doWhileLoops = BraceExistance::Require;
         BraceExistance caseStatements = BraceExistance::Require;
         BraceExistance switchStatements = BraceExistance::Require;
+        BraceExistance tryCatch = BraceExistance::Require;
     } braces;
 
     enum class Whitespace { Space, Newline, Ignore, None };
@@ -416,8 +420,52 @@ struct Style {
             };
         } bitFields;
 
+        struct {
+            PairedWhitespace braces {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::Newline,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::Newline,
+                    .after = Whitespace::Space,
+                },
+            };
+            PairedWhitespace catchBraces {
+                .opening = WhitespacePlacement {
+                    .before = Whitespace::Space,
+                    .after = Whitespace::Newline,
+                },
+                .closing = WhitespacePlacement {
+                    .before = Whitespace::Newline,
+                    .after = Whitespace::Space,
+                },
+            };
+        } tryCatch;
+    
+        PairedWhitespace parentheses {
+            .opening = WhitespacePlacement {
+                .before = Whitespace::Space,
+                .after = Whitespace::None,
+            },
+            .closing = WhitespacePlacement {
+                .before = Whitespace::None,
+                .after = Whitespace::None,
+            },
+        };
+
         WhitespacePlacement binaryOperator {
             .before = Whitespace::Space,
+            .after = Whitespace::Space,
+        };
+
+        WhitespacePlacement pointers {
+            .before = Whitespace::None,
+            .after = Whitespace::Space,
+        };
+
+        WhitespacePlacement references {
+            .before = Whitespace::None,
             .after = Whitespace::Space,
         };
 
