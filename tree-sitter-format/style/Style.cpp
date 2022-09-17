@@ -270,6 +270,50 @@ namespace {
 
         return value.as<std::string>();
     }
+
+    void SetIndentation(YAML::Node node, const std::string& name, Style::Indentation& indentation) {
+        indentation = GetOptionalIndentation(node, name, indentation);
+    }
+
+    void SetInt(YAML::Node node, const std::string& name, uint32_t& integer) {
+        integer = GetOptionalInt(node, name, integer);
+    }
+
+    void SetBool(YAML::Node node, const std::string& name, bool& boolean) {
+        boolean = GetOptionalBoolean(node, name, boolean);
+    }
+
+    void SetIndentationWhitespace(YAML::Node node, const std::string& name, Style::IndentationWhitespace& whitespace) {
+        whitespace = GetOptionalIndentationWhitespace(node, name, whitespace);
+    }
+
+    void GetBraceExistance(YAML::Node node, const std::string& name, Style::BraceExistance& brace) {
+        brace = GetOptionalBraceExistance(node, name, brace);
+    }
+
+    void GetNewLineType(YAML::Node node, const std::string& name, Style::NewLineType& newLine) {
+        newLine = GetOptionalNewLineType(node, name, newLine);
+    }
+
+    void GetWhitespace(YAML::Node node, const std::string& name, Style::Whitespace& whitespace) {
+        whitespace = GetOptionalWhitespace(node, name, whitespace);
+    }
+
+    void GetWhitespacePlacement(YAML::Node node, const std::string& name, Style::WhitespacePlacement& placement) {
+        YAML::Node placementYAML = GetMap(node, name);
+        GetWhitespace(placementYAML, "before", placement.before);
+        GetWhitespace(placementYAML, "after", placement.after);
+    }
+
+    void GetPairedWhitespace(YAML::Node node, const std::string& name, Style::PairedWhitespace& whitespace) {
+        YAML::Node pair = GetMap(node, name);
+        GetWhitespacePlacement(pair, "opening", whitespace.opening);
+        GetWhitespacePlacement(pair, "closing", whitespace.closing);
+    }
+
+    void GetRequiredWhitespace(YAML::Node node, const std::string& name, Style::RequiredWhitespace& required) {
+        required = GetOptionalRequiredWhitespace(node, name, required);
+    }
 }
 
 namespace tree_sitter_format {
@@ -960,38 +1004,120 @@ namespace tree_sitter_format {
         YAML::Node root = YAML::Load(config);
 
         YAML::Node indentation = GetMap(root, "indentation");
-        style.indentation.namespaces          = GetOptionalIndentation(indentation, "namespaces", style.indentation.namespaces);
-        style.indentation.functionDefinitions = GetOptionalIndentation(indentation, "function_definitions", style.indentation.functionDefinitions);
-        style.indentation.structDefinitions   = GetOptionalIndentation(indentation, "struct_definitions", style.indentation.structDefinitions);
-        style.indentation.classDefinitions    = GetOptionalIndentation(indentation, "class_definitions", style.indentation.classDefinitions);
-        style.indentation.ifStatements        = GetOptionalIndentation(indentation, "if_statements", style.indentation.ifStatements);
-        style.indentation.switchStatements    = GetOptionalIndentation(indentation, "switch_statements", style.indentation.switchStatements);
-        style.indentation.caseBlocks          = GetOptionalIndentation(indentation, "case_blocks", style.indentation.caseBlocks);
-        style.indentation.whileLoops          = GetOptionalIndentation(indentation, "while_loops", style.indentation.whileLoops);
-        style.indentation.doWhileLoops        = GetOptionalIndentation(indentation, "do_while_loops", style.indentation.doWhileLoops);
-        style.indentation.forLoops            = GetOptionalIndentation(indentation, "for_loops", style.indentation.forLoops);
-        style.indentation.genericScope        = GetOptionalIndentation(indentation, "generic_scope", style.indentation.genericScope);
+        SetIndentation(indentation, "namespaces", style.indentation.namespaces);
+        SetIndentation(indentation, "function_definitions", style.indentation.functionDefinitions);
+        SetIndentation(indentation, "struct_definitions", style.indentation.structDefinitions);
+        SetIndentation(indentation, "class_definitions", style.indentation.classDefinitions);
+        SetIndentation(indentation, "if_statements", style.indentation.ifStatements);
+        SetIndentation(indentation, "switch_statements", style.indentation.switchStatements);
+        SetIndentation(indentation, "case_blocks", style.indentation.caseBlocks);
+        SetIndentation(indentation, "while_loops", style.indentation.whileLoops);
+        SetIndentation(indentation, "do_while_loops", style.indentation.doWhileLoops);
+        SetIndentation(indentation, "for_loops", style.indentation.forLoops);
+        SetIndentation(indentation, "generic_scope", style.indentation.genericScope);
+        SetIndentation(indentation, "try_catch", style.indentation.tryCatch);
 
-        style.indentation.whitespace        = GetOptionalIndentationWhitespace(indentation, "whitespace", style.indentation.whitespace);
-        style.indentation.indentationAmount = GetOptionalInt(indentation, "indentation_amount", style.indentation.indentationAmount);
-        style.indentation.tabWidth          = GetOptionalInt(indentation, "tab_width", style.indentation.tabWidth);
-        style.indentation.reindent          = GetOptionalBoolean(indentation, "reindent", style.indentation.reindent);
+        SetIndentationWhitespace(indentation, "whitespace", style.indentation.whitespace);
+        SetInt(indentation, "indentation_amount", style.indentation.indentationAmount);
+        SetInt(indentation, "tab_width", style.indentation.tabWidth);
+        SetBool(indentation, "reindent", style.indentation.reindent);
 
 
         YAML::Node braces = GetMap(root, "braces");
-        style.braces.ifStatements     = GetOptionalBraceExistance(braces, "if_statements", style.braces.ifStatements);
-        style.braces.forLoops         = GetOptionalBraceExistance(braces, "for_loops", style.braces.forLoops);
-        style.braces.whileLoops       = GetOptionalBraceExistance(braces, "while_loops", style.braces.whileLoops);
-        style.braces.doWhileLoops     = GetOptionalBraceExistance(braces, "do_while_loops", style.braces.doWhileLoops);
-        style.braces.caseStatements   = GetOptionalBraceExistance(braces, "case_statements", style.braces.caseStatements);
-        style.braces.switchStatements = GetOptionalBraceExistance(braces, "switch_statements", style.braces.switchStatements);
+        GetBraceExistance(braces, "if_statements", style.braces.ifStatements);
+        GetBraceExistance(braces, "for_loops", style.braces.forLoops);
+        GetBraceExistance(braces, "while_loops", style.braces.whileLoops);
+        GetBraceExistance(braces, "do_while_loops", style.braces.doWhileLoops);
+        GetBraceExistance(braces, "case_statements", style.braces.caseStatements);
+        GetBraceExistance(braces, "switch_statements", style.braces.switchStatements);
+        GetBraceExistance(braces, "try_catch", style.braces.tryCatch);
 
 
         YAML::Node spacing = GetMap(root, "spacing");
 
-        style.spacing.newLineType  = GetOptionalNewLineType(spacing, "new_line_type", style.spacing.newLineType);
-        style.spacing.respace      = GetOptionalBoolean(spacing, "respace", style.spacing.respace);
-        style.spacing.trimTrailing = GetOptionalBoolean(spacing, "trim_trailing", style.spacing.trimTrailing);
+        YAML::Node namespaces = GetMap(spacing, "namespaces");
+        GetPairedWhitespace(namespaces, "braces", style.spacing.namespaces.braces);
+
+        YAML::Node classes = GetMap(spacing, "classes");
+        GetPairedWhitespace(classes, "braces", style.spacing.classes.braces);
+        GetWhitespacePlacement(classes, "name", style.spacing.classes.name);
+
+        YAML::Node structs = GetMap(spacing, "structs");
+        GetPairedWhitespace(structs, "braces", style.spacing.structs.braces);
+        GetWhitespacePlacement(structs, "name", style.spacing.structs.name);
+
+        YAML::Node unions = GetMap(spacing, "unions");
+        GetPairedWhitespace(unions, "braces", style.spacing.unions.braces);
+        GetWhitespacePlacement(unions, "name", style.spacing.unions.name);
+
+        YAML::Node enums = GetMap(spacing, "enums");
+        GetPairedWhitespace(enums, "braces", style.spacing.enums.braces);
+        GetWhitespacePlacement(enums, "name", style.spacing.enums.name);
+
+        YAML::Node functionDeclarations = GetMap(spacing, "function_declarations");
+        GetPairedWhitespace(functionDeclarations, "parentheses", style.spacing.functionDeclarations.parentheses);
+        GetWhitespacePlacement(functionDeclarations, "commas", style.spacing.functionDeclarations.commas);
+        GetRequiredWhitespace(functionDeclarations, "return_type", style.spacing.functionDeclarations.returnType);
+
+        YAML::Node functionDefinitions = GetMap(spacing, "function_definitions");
+        GetPairedWhitespace(functionDefinitions, "parentheses", style.spacing.functionDefinitions.parentheses);
+        GetWhitespacePlacement(functionDefinitions, "commas", style.spacing.functionDefinitions.commas);
+        GetPairedWhitespace(functionDefinitions, "braces", style.spacing.functionDefinitions.braces);
+        GetRequiredWhitespace(functionDefinitions, "return_type", style.spacing.functionDefinitions.returnType);
+
+        YAML::Node functionCalls = GetMap(spacing, "function_calls");
+        GetPairedWhitespace(functionCalls, "parentheses", style.spacing.functionCalls.parentheses);
+        GetWhitespacePlacement(functionCalls, "commas", style.spacing.functionCalls.commas);
+
+        YAML::Node forLoops = GetMap(spacing, "for_loops");
+        GetPairedWhitespace(forLoops, "parentheses", style.spacing.forLoops.parentheses);
+        GetWhitespacePlacement(forLoops, "commas", style.spacing.forLoops.commas);
+        GetWhitespacePlacement(forLoops, "semicolons", style.spacing.forLoops.semicolons);
+        GetWhitespacePlacement(forLoops, "for_each_colon", style.spacing.forLoops.forEachColon);
+        GetPairedWhitespace(forLoops, "braces", style.spacing.forLoops.braces);
+
+        YAML::Node whileLoops = GetMap(spacing, "while_loops");
+        GetPairedWhitespace(whileLoops, "parentheses", style.spacing.whileLoops.parentheses);
+        GetWhitespacePlacement(whileLoops, "commas", style.spacing.whileLoops.commas);
+        GetWhitespacePlacement(whileLoops, "semicolons", style.spacing.whileLoops.semicolons);
+        GetPairedWhitespace(whileLoops, "braces", style.spacing.whileLoops.braces);
+
+        YAML::Node doWhileLoops = GetMap(spacing, "do_while_loops");
+        GetPairedWhitespace(doWhileLoops, "parentheses", style.spacing.doWhileLoops.parentheses);
+        GetWhitespacePlacement(doWhileLoops, "commas", style.spacing.doWhileLoops.commas);
+        GetWhitespacePlacement(doWhileLoops, "semicolons", style.spacing.doWhileLoops.semicolons);
+        GetPairedWhitespace(doWhileLoops, "braces", style.spacing.doWhileLoops.braces);
+
+        YAML::Node ifStatements = GetMap(spacing, "if_statements");
+        GetPairedWhitespace(ifStatements, "parentheses", style.spacing.ifStatements.parentheses);
+        GetWhitespacePlacement(ifStatements, "commas", style.spacing.ifStatements.commas);
+        GetWhitespacePlacement(ifStatements, "semicolons", style.spacing.ifStatements.semicolons);
+        GetPairedWhitespace(ifStatements, "braces", style.spacing.ifStatements.braces);
+        GetPairedWhitespace(ifStatements, "else_braces", style.spacing.ifStatements.elseBraces);
+
+        YAML::Node switchStatements = GetMap(spacing, "switch_statements");
+        GetPairedWhitespace(switchStatements, "parentheses", style.spacing.switchStatements.parentheses);
+        GetPairedWhitespace(switchStatements, "braces", style.spacing.switchStatements.braces);
+
+        YAML::Node caseStatements = GetMap(spacing, "switch_statements");
+        GetPairedWhitespace(caseStatements, "braces", style.spacing.caseStatements.braces);
+        GetWhitespacePlacement(caseStatements, "colon", style.spacing.caseStatements.colon);
+
+        YAML::Node bitFields = GetMap(spacing, "bitFields");
+        GetWhitespacePlacement(bitFields, "colon", style.spacing.bitFields.colon);
+
+        YAML::Node tryCatch = GetMap(spacing, "try_catch");
+        GetPairedWhitespace(tryCatch, "braces", style.spacing.tryCatch.braces);
+        GetPairedWhitespace(tryCatch, "catch_braces", style.spacing.tryCatch.catchBraces);
+
+        GetPairedWhitespace(spacing, "parentheses", style.spacing.parentheses);
+        GetWhitespacePlacement(spacing, "binary_operator", style.spacing.binaryOperator);
+        GetWhitespacePlacement(spacing, "pointers", style.spacing.pointers);
+        GetWhitespacePlacement(spacing, "references", style.spacing.references);
+
+        GetNewLineType(spacing, "new_line_type", style.spacing.newLineType);
+        SetBool(spacing, "respace", style.spacing.respace);
+        SetBool(spacing, "trim_trailing", style.spacing.trimTrailing);
 
         return style;
     }
