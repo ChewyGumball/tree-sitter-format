@@ -18,13 +18,13 @@ for (auto i : collection)
 )";
 
 const std::string FOREACH_WITH_NO_BRACES = R"(
-for (auto i : collection)
+for (auto i : collection) //t
     return false;
     return true;
 )";
 
 const std::string FOREACH_MULTI_WITH_BRACES = R"(
-for (auto i : collection)
+for (auto i : collection) //t
     {return false;}
     return true;
 )";

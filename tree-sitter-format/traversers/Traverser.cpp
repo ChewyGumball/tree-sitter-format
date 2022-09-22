@@ -1,5 +1,9 @@
 #include <tree_sitter_format/traversers/Traverser.h>
 
+namespace {
+    
+}
+
 namespace tree_sitter_format {
 
 std::vector<Edit> Traverser::traverse(const Document& document, const Style& style) {

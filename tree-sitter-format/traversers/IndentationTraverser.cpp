@@ -190,6 +190,12 @@ template<size_t COUNT>
         indentation = style.indentation.structDefinitions;
     } else if (parentSymbol == CLASS_DEFINITION) {
         indentation = style.indentation.classDefinitions;
+    } else if (parentSymbol == LAMBDA_EXPRESSION) {
+        indentation = style.indentation.lambdas;
+    } else if (parentSymbol == TRY_STATEMENT) {
+        indentation = style.indentation.tryCatch;
+    } else if (parentSymbol == CATCH_CLAUSE) {
+        indentation = style.indentation.tryCatch;
     } else if (IsCaseWithSingleStatementBody(parent)) {
         // We only treat compound statements in case statements specially if they are the only statement in
         // it's body. Otherwise its just a normal block.

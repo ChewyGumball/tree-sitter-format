@@ -29,6 +29,7 @@ struct Style {
         Indentation forLoops = Indentation::BodyIndented;
         Indentation genericScope = Indentation::BodyIndented;
         Indentation tryCatch = Indentation::BodyIndented;
+        Indentation lambdas = Indentation::BodyIndented;
 
         IndentationWhitespace whitespace = IndentationWhitespace::Spaces;
         uint32_t indentationAmount = 4;
@@ -199,6 +200,7 @@ struct Style {
             };
             
             RequiredWhitespace returnType;
+            WhitespacePlacement trailingReturnTypeArrow;
         } functionDefinitions;
 
         struct {
@@ -442,6 +444,59 @@ struct Style {
                 },
             };
         } tryCatch;
+
+        struct {
+            struct {
+                PairedWhitespace squareBrackets {
+                    .opening = WhitespacePlacement {
+                        .before = Whitespace::None,
+                        .after = Whitespace::None,
+                    },
+                    .closing = WhitespacePlacement {
+                        .before = Whitespace::None,
+                        .after = Whitespace::None,
+                    },
+                };
+
+                WhitespacePlacement commas {
+                    .before = Whitespace::None,
+                    .after = Whitespace::Space,
+                };
+            } captureList;
+
+            struct {
+                PairedWhitespace parentheses {
+                    .opening = WhitespacePlacement {
+                        .before = Whitespace::None,
+                        .after = Whitespace::None,
+                    },
+                    .closing = WhitespacePlacement {
+                        .before = Whitespace::None,
+                        .after = Whitespace::None,
+                    },
+                };
+
+                WhitespacePlacement commas {
+                    .before = Whitespace::None,
+                    .after = Whitespace::Space,
+                };
+
+                WhitespacePlacement trailingReturnTypeArrow;
+            } signature;
+
+            struct {
+                PairedWhitespace braces {
+                    .opening = WhitespacePlacement {
+                        .before = Whitespace::Space,
+                        .after = Whitespace::Newline,
+                    },
+                    .closing = WhitespacePlacement {
+                        .before = Whitespace::Newline,
+                        .after = Whitespace::Newline,
+                    },
+                };
+             } body;
+        } lambdas;
     
         PairedWhitespace parentheses {
             .opening = WhitespacePlacement {

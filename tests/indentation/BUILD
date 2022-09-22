@@ -107,3 +107,21 @@ tsf_cc_test(
         "//tests:test_utils",
     ]
 )
+
+tsf_cc_test(
+    name = "lambdas",
+    srcs = ["Lambdas.cpp"],
+    deps = [
+        "//tree-sitter-format:indentation_traverser",
+        "//tests:test_utils",
+    ]
+)
+
+tsf_cc_test(
+    name = "try_catch",
+    srcs = ["TryCatch.cpp"],
+    deps = [
+        "//tree-sitter-format:indentation_traverser",
+        "//tests:test_utils",
+    ]
+)

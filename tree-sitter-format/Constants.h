@@ -19,6 +19,9 @@ inline const TSSymbol CASE_STATEMENT = ts_language_symbol_for_name(tree_sitter_c
 inline const TSSymbol NAMESPACE = ts_language_symbol_for_name(tree_sitter_cpp(), "namespace_definition", 20, true);
 inline const TSSymbol STRUCT_DEFINITION = ts_language_symbol_for_name(tree_sitter_cpp(), "struct_specifier", 16, true);
 inline const TSSymbol CLASS_DEFINITION = ts_language_symbol_for_name(tree_sitter_cpp(), "class_specifier", 15, true);
+inline const TSSymbol LAMBDA_EXPRESSION = ts_language_symbol_for_name(tree_sitter_cpp(), "lambda_expression", 17, true);
+inline const TSSymbol TRY_STATEMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "try_statement", 13, true);
+inline const TSSymbol CATCH_CLAUSE = ts_language_symbol_for_name(tree_sitter_cpp(), "catch_clause", 12, true);
 
 inline const TSSymbol DECLARATION = ts_language_symbol_for_name(tree_sitter_cpp(), "declaration", 11, true);
 
@@ -36,6 +39,8 @@ inline const TSSymbol INITIALIZER_LIST = ts_language_symbol_for_name(tree_sitter
 inline const TSSymbol EXPRESSION = ts_language_symbol_for_name(tree_sitter_cpp(), "expression", 10, true);
 inline const TSSymbol COMMA_EXPRESSION = ts_language_symbol_for_name(tree_sitter_cpp(), "comma_expression", 16, true);
 inline const TSSymbol BINARY_EXPRESSION = ts_language_symbol_for_name(tree_sitter_cpp(), "binary_expression", 17, true);
+
+inline const TSSymbol COMMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "comment", 7, true);
 
 inline const TSSymbol ERROR = ts_language_symbol_for_name(tree_sitter_cpp(), "ERROR", 5, true);
 

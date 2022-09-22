@@ -23,12 +23,15 @@ using namespace std::literals::string_view_literals;
 
 using namespace tree_sitter_format;
 
-const std::filesystem::path inputFileName = "G:/Projects/tree-sitter-format/tree-sitter-format/traversers/BracketExistanceTraverser.cpp";
-const std::filesystem::path outputFileName = "G:/Projects/tree-sitter-format/tree-sitter-format/traversers/BracketExistanceTraverser.cpp";
+const std::filesystem::path inputFileName = "G:\\Projects\\tree-sitter-format\\test.cpp";
+const std::filesystem::path outputFileName = "G:\\Projects\\tree-sitter-format\\test.cpp.out";
 
 int main() {
     using namespace tree_sitter_format;
     Style style;
+
+    style.braces.forLoops = Style::BraceExistance::Require;
+    style.indentation.reindent = false;
 
     Document document(inputFileName);
     std::cout << "Input Text: " << std::endl << document << std::endl;
@@ -50,13 +53,13 @@ int main() {
 
     Formatter formatter;
     // Ensure Braces
-    formatter.addTraverser(std::make_unique<BracketExistanceTraverser>());
+    //formatter.addTraverser(std::make_unique<BracketExistanceTraverser>());
     // Reindent
-    formatter.addTraverser(std::make_unique<IndentationTraverser>());
+    //formatter.addTraverser(std::make_unique<IndentationTraverser>());
     // Debug Print
-    // formatter.addTraverser(std::make_unique<ParseTraverser>());
+     formatter.addTraverser(std::make_unique<ParseTraverser>());
     // Trailing Space
-    formatter.addTraverser(std::make_unique<SpaceTraverser>());
+    //formatter.addTraverser(std::make_unique<SpaceTraverser>());
 
     formatter.format(style, document);
 

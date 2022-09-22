@@ -2,6 +2,8 @@
 
 #include <tree_sitter_format/Constants.h>
 
+#include <assert.h>
+
 using namespace std::literals::string_view_literals;
 
 namespace {
