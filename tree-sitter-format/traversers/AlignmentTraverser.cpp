@@ -10,6 +10,15 @@ namespace {
 
     std::unordered_map<uint32_t, std::string> spaces;
 
+    TSNode findNextNonExtraChild(TSNode node, uint32_t childIndex) {
+        TSNode child = ts_node_child(node, childIndex++);
+        while(ts_node_is_extra(child)) {
+            child = ts_node_child(node, childIndex++);
+        }
+
+        return child;
+    }
+
     void AlignDeclarations(TSNode node, const std::vector<uint32_t>& children, TraverserContext& context) {
         uint32_t maxDistanceToName = 0;
 
@@ -19,7 +28,7 @@ namespace {
             TSNode child = ts_node_child(node, i);
             assert(ts_node_symbol(child) == DECLARATION);
 
-            TSNode firstDeclarator = ts_node_child(child, 1);
+            TSNode firstDeclarator = findNextNonExtraChild(child, 1);
 
             while(ts_node_symbol(firstDeclarator) != IDENTIFIER) {
                 if (ts_node_symbol(firstDeclarator) == INIT_DECLARATOR) {
@@ -43,7 +52,7 @@ namespace {
                 }
 
                 if (ts_node_symbol(firstDeclarator) == PARENTHESIZED_DECLARATOR) {
-                    firstDeclarator = ts_node_child(firstDeclarator, 1);
+                    firstDeclarator = findNextNonExtraChild(firstDeclarator, 1);
                 }
             }
 
