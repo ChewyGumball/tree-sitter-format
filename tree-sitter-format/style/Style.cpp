@@ -813,7 +813,6 @@ namespace tree_sitter_format {
             style.braces.forLoops = BraceExistance::Remove;
             style.braces.whileLoops = BraceExistance::Remove;
             style.braces.doWhileLoops = BraceExistance::Remove;
-            style.braces.tryCatch = BraceExistance::Remove;
         }
 
         // RequiresClausePosition 
@@ -1030,7 +1029,6 @@ namespace tree_sitter_format {
         GetBraceExistance(braces, "do_while_loops", style.braces.doWhileLoops);
         GetBraceExistance(braces, "case_statements", style.braces.caseStatements);
         GetBraceExistance(braces, "switch_statements", style.braces.switchStatements);
-        GetBraceExistance(braces, "try_catch", style.braces.tryCatch);
 
 
         YAML::Node spacing = GetMap(root, "spacing");

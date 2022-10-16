@@ -1,5 +1,7 @@
 #include <tree_sitter_format/traversers/Traverser.h>
 
+#include <iostream>
+
 namespace {
     
 }

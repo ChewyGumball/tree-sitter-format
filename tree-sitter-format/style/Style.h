@@ -5,11 +5,6 @@
 
 namespace tree_sitter_format {
 
-struct BraceStyle {
-
-};
-
-
 struct Style {
     uint32_t targetLineLength = 120;
 
@@ -48,7 +43,6 @@ struct Style {
         BraceExistance doWhileLoops = BraceExistance::Require;
         BraceExistance caseStatements = BraceExistance::Require;
         BraceExistance switchStatements = BraceExistance::Require;
-        BraceExistance tryCatch = BraceExistance::Require;
     } braces;
 
     enum class Whitespace { Space, Newline, Ignore, None };
@@ -64,7 +58,6 @@ struct Style {
     };
 
     enum class NewLineType { CRLF, LF, CR };
-    enum class SpacePlacement { None, Before, After, Surround, Ignore };
     struct {
         struct {
             PairedWhitespace braces {
@@ -529,6 +522,38 @@ struct Style {
         bool trimTrailing = true;
     } spacing;
     
+    struct Alignment {
+        bool acrossComments;
+        bool acrossEmptyLines;
+    };
+
+    struct {
+        Alignment variableDeclarations {
+            .acrossComments = false,
+            .acrossEmptyLines = false,
+        };
+        Alignment memberVariableDeclarations {
+            .acrossComments = false,
+            .acrossEmptyLines = false,
+        };
+        Alignment assignments {
+            .acrossComments = false,
+            .acrossEmptyLines = false,
+        };
+        Alignment bitFields {
+            .acrossComments = false,
+            .acrossEmptyLines = false,
+        };
+        Alignment macros {
+            .acrossComments = false,
+            .acrossEmptyLines = false,
+        };
+        Alignment escapedNewlines {
+            .acrossComments = true,
+            .acrossEmptyLines = false,
+        };
+    } alignment;
+
     std::string_view newLineString() const;
 
     static Style FromClangFormat(const std::string& config);

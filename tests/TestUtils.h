@@ -23,14 +23,6 @@ inline const std::unordered_map<tree_sitter_format::Style::BraceExistance, std::
     {tree_sitter_format::Style::BraceExistance::Ignore,  "Ignore"},
 };
 
-inline const std::unordered_map<tree_sitter_format::Style::SpacePlacement, std::string> SPACE_PLACEMENT_NAMES = {
-    {tree_sitter_format::Style::SpacePlacement::None,     "None"},
-    {tree_sitter_format::Style::SpacePlacement::Before,   "Before"},
-    {tree_sitter_format::Style::SpacePlacement::After,    "After"},
-    {tree_sitter_format::Style::SpacePlacement::Surround, "Surround"},
-    {tree_sitter_format::Style::SpacePlacement::Ignore,   "Ignore"},
-};
-
 struct TestCase {
     std::string inputLabel;
     std::string inputValue;

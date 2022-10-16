@@ -24,6 +24,13 @@ inline const TSSymbol TRY_STATEMENT = ts_language_symbol_for_name(tree_sitter_cp
 inline const TSSymbol CATCH_CLAUSE = ts_language_symbol_for_name(tree_sitter_cpp(), "catch_clause", 12, true);
 
 inline const TSSymbol DECLARATION = ts_language_symbol_for_name(tree_sitter_cpp(), "declaration", 11, true);
+inline const TSSymbol INIT_DECLARATOR = ts_language_symbol_for_name(tree_sitter_cpp(), "init_declarator", 15, true);
+inline const TSSymbol IDENTIFIER = ts_language_symbol_for_name(tree_sitter_cpp(), "identifier", 10, true);
+inline const TSSymbol POINTER_DECLARATOR = ts_language_symbol_for_name(tree_sitter_cpp(), "pointer_declarator", 18, true);
+inline const TSSymbol ARRAY_DECLARATOR = ts_language_symbol_for_name(tree_sitter_cpp(), "array_declarator", 16, true);
+inline const TSSymbol ATTRIBUTED_DECLARATOR = ts_language_symbol_for_name(tree_sitter_cpp(), "attributed_declarator", 21, true);
+inline const TSSymbol FUNCTION_DECLARATOR = ts_language_symbol_for_name(tree_sitter_cpp(), "function_declarator", 19, true);
+inline const TSSymbol PARENTHESIZED_DECLARATOR = ts_language_symbol_for_name(tree_sitter_cpp(), "parenthesized_declarator", 24, true);
 
 // Regular code block
 inline const TSSymbol COMPOUND_STATEMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "compound_statement", 18, true);
@@ -42,6 +49,7 @@ inline const TSSymbol BINARY_EXPRESSION = ts_language_symbol_for_name(tree_sitte
 
 inline const TSSymbol COMMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "comment", 7, true);
 
+inline const TSSymbol TRANSLATION_UNIT = ts_language_symbol_for_name(tree_sitter_cpp(), "translation_unit", 16, true);
 inline const TSSymbol ERROR = ts_language_symbol_for_name(tree_sitter_cpp(), "ERROR", 5, true);
 
 }

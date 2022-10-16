@@ -6,6 +6,7 @@
 #include <tree_sitter_format/traversers/IndentationTraverser.h>
 #include <tree_sitter_format/traversers/ParseTraverser.h>
 #include <tree_sitter_format/traversers/SpaceTraverser.h>
+#include <tree_sitter_format/traversers/AlignmentTraverser.h>
 
 #include <tree_sitter_format/Formatter.h>
 
@@ -27,6 +28,14 @@ const std::filesystem::path inputFileName = "G:\\Projects\\tree-sitter-format\\t
 const std::filesystem::path outputFileName = "G:\\Projects\\tree-sitter-format\\test.cpp.out";
 
 int main() {
+    #ifdef _DEBUG
+    std::cout << "_DEBUG defined" << std::endl;
+    #endif
+
+    #ifdef NDEBUG
+    std::cout << "NDEBUG defined" << std::endl;
+    #endif
+
     using namespace tree_sitter_format;
     Style style;
 
@@ -57,7 +66,9 @@ int main() {
     // Reindent
     //formatter.addTraverser(std::make_unique<IndentationTraverser>());
     // Debug Print
-     formatter.addTraverser(std::make_unique<ParseTraverser>());
+    formatter.addTraverser(std::make_unique<ParseTraverser>());
+    // Alignment
+    formatter.addTraverser(std::make_unique<AlignmentTraverser>());
     // Trailing Space
     //formatter.addTraverser(std::make_unique<SpaceTraverser>());
 

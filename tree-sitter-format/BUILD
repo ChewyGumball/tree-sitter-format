@@ -8,6 +8,7 @@ tsf_cc_binary(
         ":indentation_traverser",
         ":parse_traverser",
         ":space_traverser",
+        ":alignment_traverser",
         ":constants",
         ":configuration",
         ":document",
@@ -55,6 +56,18 @@ tsf_cc_library(
     visibility = ["//visibility:public"],
     hdrs = ["traversers/SpaceTraverser.h"],
     srcs = ["traversers/SpaceTraverser.cpp"],
+    include_prefix = "tree_sitter_format",
+    deps = [
+        ":constants",
+        ":traverser",
+    ],
+)
+
+tsf_cc_library(
+    name = "alignment_traverser",
+    visibility = ["//visibility:public"],
+    hdrs = ["traversers/AlignmentTraverser.h"],
+    srcs = ["traversers/AlignmentTraverser.cpp"],
     include_prefix = "tree_sitter_format",
     deps = [
         ":constants",
