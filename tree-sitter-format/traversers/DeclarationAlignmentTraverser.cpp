@@ -138,7 +138,7 @@ void DeclarationAlignmentTraverser::postVisitChild(TSNode node, uint32_t childIn
 
     TSSymbol symbol = ts_node_symbol(node);
 
-    if (symbol == TRANSLATION_UNIT) {
+    if (symbol == TRANSLATION_UNIT || symbol == COMPOUND_STATEMENT) {
         CheckVariables(node, context.style.alignment.variableDeclarations, context);
         // CheckBitFields(node, context.style.alignment.bitFields);
         // CheckVariables(node, context.style.alignment.variableDeclarations);
