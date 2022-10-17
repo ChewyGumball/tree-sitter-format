@@ -20,16 +20,18 @@ namespace {
 
         const bool onSameLine = lhs.location.row == rhs.location.row;
 
-        if (onSameLine && style == Style::Whitespace::Newline) {
-            context.edits.push_back(InsertEdit{.position = lhs, .bytes = context.style.newLineString()});
-        } else if (!onSameLine && style != Style::Whitespace::Newline) {
+        if (onSameLine) {
+            context.edits.push_back(DeleteEdit{.range = Range::Between(lhs, rhs)});
+            if (style == Style::Whitespace::Newline) {
+                context.edits.push_back(InsertEdit{.position = lhs, .bytes = context.style.newLineString()});
+            } else if (style == Style::Whitespace::Space) {
+                context.edits.push_back(InsertEdit {.position = rhs, .bytes = " "sv});            
+            }
+        } else if (style != Style::Whitespace::Newline) {
             context.edits.push_back(DeleteEdit{.range = Range::Between(lhs, rhs)});
             if (style == Style::Whitespace::Space) {
                 context.edits.push_back(InsertEdit {.position = rhs, .bytes = " "sv});
             }
-        } else if (onSameLine && style == Style::Whitespace::Space) {
-            context.edits.push_back(DeleteEdit{.range = Range::Between(lhs, rhs)});
-            context.edits.push_back(InsertEdit {.position = rhs, .bytes = " "sv});            
         }
     }
 
