@@ -1,6 +1,7 @@
 #include <tree_sitter_format/traversers/BracketExistanceTraverser.h>
 
 #include <tree_sitter_format/Constants.h>
+#include <tree_sitter_format/Util.h>
 
 #include <assert.h>
 
@@ -9,15 +10,6 @@ using namespace std::literals::string_view_literals;
 namespace {
 
 using namespace tree_sitter_format;
-
-std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
-    const char* name = ts_node_field_name_for_child(node, childIndex);
-    if(name == nullptr) {
-        return std::string_view();
-    } else {
-        return name;
-    }
-}
     
 void HandleCompoundChild(TSNode node, uint32_t childIndex, TraverserContext& context, Style::BraceExistance style) {
     TSNode child = ts_node_child(node, childIndex);

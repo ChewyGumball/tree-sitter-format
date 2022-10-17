@@ -4,7 +4,7 @@
 
 namespace tree_sitter_format {
 
-class AlignmentTraverser : public Traverser {
+class DeclarationAlignmentTraverser : public Traverser {
 protected:
     void reset(const TraverserContext& context) override;
     

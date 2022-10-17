@@ -1,29 +1,9 @@
 #include <tree_sitter_format/traversers/ParseTraverser.h>
 
+#include <tree_sitter_format/Util.h>
+
 #include <iostream>
 #include <format>
-
-namespace {
-    std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
-        // There is currently a bug where this does not return the right field name
-        // in all cases: https://github.com/tree-sitter/tree-sitter/issues/1642
-        //
-        // In our case, this is most noticable when comments are inserted between
-        // fields.
-        //
-        // IE: for(auto i : c) // help
-        //          i++;
-        // 
-        //      labels the "//help" comment node as the body, and will crash
-        //      when querying the field name of the "i++;" child.
-        const char* name = ts_node_field_name_for_child(node, childIndex);
-        if(name == nullptr) {
-            return std::string_view();
-        } else {
-            return name;
-        }
-    }
-}
 
 namespace tree_sitter_format {
     void ParseTraverser::reset([[maybe_unused]]const TraverserContext& context) {

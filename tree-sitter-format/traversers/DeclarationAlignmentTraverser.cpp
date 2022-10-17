@@ -1,35 +1,13 @@
-#include <tree_sitter_format/traversers/AlignmentTraverser.h>
+#include <tree_sitter_format/traversers/DeclarationAlignmentTraverser.h>
 
 #include <tree_sitter_format/Constants.h>
+#include <tree_sitter_format/Util.h>
 
 #include <assert.h>
 #include <unordered_map>
 
 namespace {
     using namespace tree_sitter_format;
-
-    std::unordered_map<uint32_t, std::string> spaces;
-
-    TSNode findNextNonExtraChild(TSNode node, uint32_t childIndex) {
-        TSNode child = ts_node_child(node, childIndex++);
-        while(ts_node_is_extra(child)) {
-            child = ts_node_child(node, childIndex++);
-        }
-
-        return child;
-    }
-
-    bool isDeclarationLike(TSNode node) {
-        TSSymbol symbol = ts_node_symbol(node);
-        return symbol == DECLARATION ||
-               symbol == FIELD_DECLARATION;
-    }
-
-    bool isIdentifierLike(TSNode node) {
-        TSSymbol symbol = ts_node_symbol(node);
-        return symbol == IDENTIFIER ||
-               symbol == FIELD_IDENTIFIER;
-    }
 
     void AlignNodes(const std::vector<TSNode>& nodes, TraverserContext& context) {
         uint32_t maxColumn = 0;
@@ -47,11 +25,8 @@ namespace {
             }
 
             uint32_t spaceToAdd = maxColumn - startColumn;
-            if (!spaces.contains(spaceToAdd)) {
-                spaces[spaceToAdd] = std::string(spaceToAdd, ' ');
-            }
 
-            context.edits.push_back(InsertEdit{.position = Position::StartOf(node), .bytes = spaces[spaceToAdd]});
+            context.edits.push_back(InsertEdit{.position = Position::StartOf(node), .bytes = GetSpaces(spaceToAdd)});
         }
     }
 
@@ -60,11 +35,12 @@ namespace {
 
         for(uint32_t i : children) {
             TSNode child = ts_node_child(node, i);
-            assert(isDeclarationLike(child));
+            assert(IsDeclarationLike(child));
 
-            TSNode firstDeclarator = findNextNonExtraChild(child, 1);
+            TSNode firstDeclarator = FindFirstNonExtraChild(child, 1);
+            assert(!ts_node_is_null(firstDeclarator));
 
-            while(!isIdentifierLike(firstDeclarator)) {
+            while(!IsIdentifierLike(firstDeclarator)) {
                 if (ts_node_symbol(firstDeclarator) == INIT_DECLARATOR) {
                     firstDeclarator = ts_node_child(firstDeclarator, 0);
                 }
@@ -86,7 +62,8 @@ namespace {
                 }
 
                 if (ts_node_symbol(firstDeclarator) == PARENTHESIZED_DECLARATOR) {
-                    firstDeclarator = findNextNonExtraChild(firstDeclarator, 1);
+                    firstDeclarator = FindFirstNonExtraChild(firstDeclarator, 1);
+                    assert(!ts_node_is_null(firstDeclarator));
                 }
 
                 if (ts_node_symbol(firstDeclarator) == FIELD_DECLARATOR) {
@@ -108,7 +85,7 @@ namespace {
         for(uint32_t i = 0; i < childCount; i++) {
             TSNode child = ts_node_child(node, i);
 
-            if (isDeclarationLike(child)) {
+            if (IsDeclarationLike(child)) {
                 std::vector<uint32_t> list;
                 list.push_back(i++);
 
@@ -124,7 +101,7 @@ namespace {
                         continue;
                     }
 
-                    if (isDeclarationLike(c)) {
+                    if (IsDeclarationLike(c)) {
                         if (!style.acrossEmptyLines && isSameLine) {
                             break;
                         }
@@ -148,11 +125,11 @@ namespace {
 }
 
 namespace tree_sitter_format {
-void AlignmentTraverser::reset(const TraverserContext&) {}
+void DeclarationAlignmentTraverser::reset(const TraverserContext&) {}
 
-void AlignmentTraverser::visitLeaf(TSNode, TraverserContext&) {}
-void AlignmentTraverser::preVisitChild(TSNode, uint32_t, TraverserContext&) {}
-void AlignmentTraverser::postVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
+void DeclarationAlignmentTraverser::visitLeaf(TSNode, TraverserContext&) {}
+void DeclarationAlignmentTraverser::preVisitChild(TSNode, uint32_t, TraverserContext&) {}
+void DeclarationAlignmentTraverser::postVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
     // We need to look at all children all at once, not in a depth first fashion. We do that when we get called
     // for the first child, and do nothing for the other children.
     if (childIndex != 0) {

@@ -1,6 +1,7 @@
 #include <tree_sitter_format/traversers/IndentationTraverser.h>
 
 #include <tree_sitter_format/Constants.h>
+#include <tree_sitter_format/Util.h>
 
 #include <cassert>
 
@@ -10,35 +11,7 @@ namespace {
 
 using namespace tree_sitter_format;
 
-std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
-    const char* name = ts_node_field_name_for_child(node, childIndex);
-    if(name == nullptr) {
-        return std::string_view();
-    } else {
-        return name;
-    }
-}
-
 enum class ScopeChange { None, IncreaseBefore, DecreaseAfter, Both };
-
-[[nodiscard]] bool IsCompoundStatementLike(TSSymbol symbol) {
-    return symbol == COMPOUND_STATEMENT ||
-           symbol == DECLARATION_LIST ||
-           symbol == FIELD_DECLARATION_LIST;
-}
-
-[[nodiscard]] bool IsCaseWithSingleStatementBody(TSNode node) {
-    TSSymbol symbol = ts_node_symbol(node);
-
-    if (symbol == CASE_STATEMENT) {
-        uint32_t childCount = ts_node_child_count(node);
-        bool isDefaultCase = !ts_node_is_named(ts_node_child(node, 1));
-
-        return childCount == (isDefaultCase ? 3u : 4u);
-    }
-
-    return false;
-}
     
 template<size_t COUNT>
 [[nodiscard]] ScopeChange NonCompoundBodyScopeChange(TSNode node, uint32_t childIndex, const std::string_view (&allowedFieldNames)[COUNT], Style::Indentation allowedIndentation) {
@@ -46,12 +19,11 @@ template<size_t COUNT>
     for(auto allowedName : allowedFieldNames) {
         if (fieldName == allowedName) {
             TSNode child = ts_node_child(node, childIndex);
-            TSSymbol childSymbol = ts_node_symbol(child);
 
             // Compound Statements handle their own indentation so they can be handled uniformly
             // Declaration Lists are handled the same as Compound Statements, but the grammar
             // requires they be different node types.
-            if (IsCompoundStatementLike(childSymbol)) {
+            if (IsCompoundStatementLike(child)) {
                 return ScopeChange::None;
             }
             
@@ -280,7 +252,7 @@ ScopeChange ScopeChangeForChild(TSNode node, uint32_t childIndex, const Style& s
         return DoWhileLoopScopeChange(node, childIndex, style);
     } else if (symbol == CASE_STATEMENT) {
         return CaseScopeChange(node, childIndex, style);
-    } else if (IsCompoundStatementLike(symbol)) {
+    } else if (IsCompoundStatementLike(node)) {
         // This handles things that are enclosed in { and }
         // There are multiple grammar symbols that are handled the same way
         // but we will just refer to them all as compound statements.

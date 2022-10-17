@@ -36,6 +36,8 @@ inline const TSSymbol FIELD_DECLARATOR = ts_language_symbol_for_name(tree_sitter
 inline const TSSymbol FIELD_DECLARATION = ts_language_symbol_for_name(tree_sitter_cpp(), "field_declaration", 17, true);
 inline const TSSymbol FIELD_IDENTIFIER = ts_language_symbol_for_name(tree_sitter_cpp(), "field_identifier", 16, true);
 
+inline const TSSymbol BITFIELD_CLAUSE = ts_language_symbol_for_name(tree_sitter_cpp(), "bitfield_clause", 15, true);
+
 // Regular code block
 inline const TSSymbol COMPOUND_STATEMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "compound_statement", 18, true);
 // The block for namespaces and externs

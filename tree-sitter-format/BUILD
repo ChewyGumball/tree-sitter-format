@@ -8,7 +8,8 @@ tsf_cc_binary(
         ":indentation_traverser",
         ":parse_traverser",
         ":space_traverser",
-        ":alignment_traverser",
+        ":declaration_alignment_traverser",
+        ":bitfield_alignment_traverser",
         ":constants",
         ":configuration",
         ":document",
@@ -36,6 +37,7 @@ tsf_cc_library(
     deps = [
         ":constants",
         ":traverser",
+        ":util",
     ],
 )
 
@@ -48,6 +50,7 @@ tsf_cc_library(
     deps = [
         ":constants",
         ":traverser",
+        ":util",
     ],
 )
 
@@ -60,18 +63,33 @@ tsf_cc_library(
     deps = [
         ":constants",
         ":traverser",
+        ":util",
     ],
 )
 
 tsf_cc_library(
-    name = "alignment_traverser",
+    name = "declaration_alignment_traverser",
     visibility = ["//visibility:public"],
-    hdrs = ["traversers/AlignmentTraverser.h"],
-    srcs = ["traversers/AlignmentTraverser.cpp"],
+    hdrs = ["traversers/DeclarationAlignmentTraverser.h"],
+    srcs = ["traversers/DeclarationAlignmentTraverser.cpp"],
     include_prefix = "tree_sitter_format",
     deps = [
         ":constants",
         ":traverser",
+        ":util",
+    ],
+)
+
+tsf_cc_library(
+    name = "bitfield_alignment_traverser",
+    visibility = ["//visibility:public"],
+    hdrs = ["traversers/BitfieldAlignmentTraverser.h"],
+    srcs = ["traversers/BitfieldAlignmentTraverser.cpp"],
+    include_prefix = "tree_sitter_format",
+    deps = [
+        ":constants",
+        ":traverser",
+        ":util",
     ],
 )
 
@@ -81,7 +99,10 @@ tsf_cc_library(
     hdrs = ["traversers/ParseTraverser.h"],
     srcs = ["traversers/ParseTraverser.cpp"],
     include_prefix = "tree_sitter_format",
-    deps = [":traverser"],
+    deps = [
+        ":traverser",
+        ":util",
+    ],
 )
 
 tsf_cc_library(
@@ -89,6 +110,17 @@ tsf_cc_library(
     hdrs = ["Constants.h"],
     include_prefix = "tree_sitter_format",
     deps = ["@tree-sitter"],
+)
+
+tsf_cc_library(
+    name = "util",
+    hdrs = ["Util.h"],
+    srcs = ["Util.cpp"],
+    include_prefix = "tree_sitter_format",
+    deps = [
+        ":constants",
+        "@tree-sitter",
+    ],
 )
 
 tsf_cc_library(

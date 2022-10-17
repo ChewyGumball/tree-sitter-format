@@ -1,6 +1,7 @@
 #include <tree_sitter_format/traversers/SpaceTraverser.h>
 
 #include <tree_sitter_format/Constants.h>
+#include <tree_sitter_format/Util.h>
 
 #include <cassert>
 
@@ -8,15 +9,6 @@ using namespace std::literals::string_view_literals;
 
 namespace {
     using namespace tree_sitter_format;
-    
-    std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
-        const char* name = ts_node_field_name_for_child(node, childIndex);
-        if(name == nullptr) {
-            return std::string_view();
-        } else {
-            return name;
-        }
-    }
 
     void EnsureSpacing(TSNode currentNode, TSNode nextNode, Style::Whitespace style, TraverserContext& context) {
         if (style == Style::Whitespace::Ignore) {
@@ -35,6 +27,9 @@ namespace {
             if (style == Style::Whitespace::Space) {
                 context.edits.push_back(InsertEdit {.position = rhs, .bytes = " "sv});
             }
+        } else if (onSameLine && style == Style::Whitespace::Space) {
+            context.edits.push_back(DeleteEdit{.range = Range::Between(lhs, rhs)});
+            context.edits.push_back(InsertEdit {.position = rhs, .bytes = " "sv});            
         }
     }
 
@@ -148,6 +143,25 @@ namespace {
             EnsureSpacing(child, lhs, rhs, style, context);
         }
     }
+
+    void BitFieldSpacing(TSNode node, uint32_t childIndex, TraverserContext& context) {
+        assert(ts_node_symbol(node) == FIELD_DECLARATION);
+        TSNode child = ts_node_child(node, childIndex);
+
+        if (ts_node_symbol(child) != BITFIELD_CLAUSE) {
+            return;
+        }
+
+        Style::WhitespacePlacement style = context.style.spacing.bitFields.colon;
+
+        TSNode previousNode = ts_node_prev_sibling(child);
+        EnsureSpacing(previousNode, child, style.before, context);
+
+        TSNode colon = ts_node_child(child, 0);
+        TSNode nextNode = ts_node_child(child, 1);
+
+        EnsureSpacing(colon, nextNode, style.after, context);
+    }
 }
 
 namespace tree_sitter_format {
@@ -181,6 +195,8 @@ void SpaceTraverser::preVisitChild(TSNode node, uint32_t childIndex, TraverserCo
         BinaryOperatorSpacing(node, childIndex, context);
     } else if (symbol == FOR_LOOP) {
         ForLoopStatementSpacing(node, childIndex, context);
+    } else if (symbol == FIELD_DECLARATION) {
+        BitFieldSpacing(node, childIndex, context);
     }
 }
 
