@@ -3,6 +3,7 @@
 #include <tree_sitter_format/Constants.h>
 
 #include <unordered_map>
+#include <assert.h>
 
 namespace tree_sitter_format {
 
@@ -111,6 +112,28 @@ std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
     TSSymbol symbol = ts_node_symbol(node);
     return symbol == IDENTIFIER ||
             symbol == FIELD_IDENTIFIER;
+}
+
+[[nodiscard]] bool IsAssignmentLike(TSNode node) {
+    TSSymbol symbol = ts_node_symbol(node);
+    if (symbol == EXPRESSION_STATEMENT) {
+        // This is an empty statement terminated by a semicolon
+        if (ts_node_child_count(node) == 1) {
+            return false;
+        }
+
+        TSNode child = ts_node_child(node, 0);
+        return ts_node_symbol(child) == ASSIGNMENT_EXPRESSION;
+    } else if (symbol == DECLARATION) {
+            TSNode firstDeclarator = FindFirstNonExtraChild(node, 1);
+            assert(!ts_node_is_null(firstDeclarator));
+            return ts_node_symbol(firstDeclarator) == INIT_DECLARATOR;
+    } else if (symbol == FIELD_DECLARATION) {
+        TSNode defaultValue = ts_node_child_by_field_name(node, "default_value", 13);
+        return !ts_node_is_null(defaultValue);
+    }
+
+    return false;
 }
 
 [[nodiscard]] bool IsBitfieldDeclaration(TSNode node) {

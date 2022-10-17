@@ -16,6 +16,8 @@ namespace tree_sitter_format {
 [[nodiscard]] bool IsCaseWithSingleStatementBody(TSNode node);
 [[nodiscard]] bool IsDeclarationLike(TSNode node);
 [[nodiscard]] bool IsIdentifierLike(TSNode node);
+[[nodiscard]] bool IsAssignmentLike(TSNode node);
+
 
 [[nodiscard]] bool IsBitfieldDeclaration(TSNode node);
 

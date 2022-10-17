@@ -8,6 +8,7 @@
 #include <tree_sitter_format/traversers/SpaceTraverser.h>
 #include <tree_sitter_format/traversers/DeclarationAlignmentTraverser.h>
 #include <tree_sitter_format/traversers/BitfieldAlignmentTraverser.h>
+#include <tree_sitter_format/traversers/AssignmentAlignmentTraverser.h>
 
 #include <tree_sitter_format/Formatter.h>
 
@@ -73,6 +74,7 @@ int main() {
     // Alignment
     formatter.addTraverser(std::make_unique<DeclarationAlignmentTraverser>());
     formatter.addTraverser(std::make_unique<BitfieldAlignmentTraverser>());
+    formatter.addTraverser(std::make_unique<AssignmentAlignmentTraverser>());
 
     formatter.format(style, document);
 
