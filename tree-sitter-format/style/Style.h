@@ -523,32 +523,39 @@ struct Style {
     } spacing;
     
     struct Alignment {
+        bool align;
         bool acrossComments;
         bool acrossEmptyLines;
     };
 
     struct {
         Alignment variableDeclarations {
+            .align = true,
             .acrossComments = false,
             .acrossEmptyLines = false,
         };
         Alignment memberVariableDeclarations {
+            .align = true,
             .acrossComments = false,
             .acrossEmptyLines = false,
         };
         Alignment assignments {
+            .align = true,
             .acrossComments = false,
             .acrossEmptyLines = false,
         };
         Alignment bitFields {
+            .align = true,
             .acrossComments = false,
             .acrossEmptyLines = false,
         };
         Alignment macros {
+            .align = true,
             .acrossComments = false,
             .acrossEmptyLines = false,
         };
         Alignment escapedNewlines {
+            .align = true,
             .acrossComments = true,
             .acrossEmptyLines = false,
         };

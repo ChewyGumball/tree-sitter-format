@@ -135,8 +135,13 @@ void AssignmentAlignmentTraverser::reset(const TraverserContext&) {}
 void AssignmentAlignmentTraverser::visitLeaf(TSNode, TraverserContext&) {}
 void AssignmentAlignmentTraverser::preVisitChild(TSNode, uint32_t, TraverserContext&) {}
 void AssignmentAlignmentTraverser::postVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
+    if (!context.style.alignment.assignments.align) {
+        return;
+    }
+
     // We need to look at all children all at once, not in a depth first fashion. We do that when we get called
-    // for the first child, and do nothing for the other children.
+    // for the first child, and do nothing for the other children. We can't look at the child because that would
+    // miss the top level node which can have asignments in it.
     if (childIndex != 0) {
         return;
     }

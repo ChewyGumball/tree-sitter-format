@@ -101,14 +101,14 @@ void BitfieldAlignmentTraverser::reset(const TraverserContext&) {}
 void BitfieldAlignmentTraverser::visitLeaf(TSNode, TraverserContext&) {}
 void BitfieldAlignmentTraverser::preVisitChild(TSNode, uint32_t, TraverserContext&) {}
 void BitfieldAlignmentTraverser::postVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
-    // We need to look at all children all at once, not in a depth first fashion. We do that when we get called
-    // for the first child, and do nothing for the other children.
-    if (childIndex != 0) {
+    if (!context.style.alignment.bitFields.align) {
         return;
     }
 
-    if (ts_node_symbol(node) == FIELD_DECLARATION_LIST) {
-        CheckBitFields(node, context.style.alignment.bitFields, context);
+    TSNode child = ts_node_child(node, childIndex);
+
+    if (ts_node_symbol(child) == FIELD_DECLARATION_LIST) {
+        CheckBitFields(child, context.style.alignment.bitFields, context);
     }
 }
 }

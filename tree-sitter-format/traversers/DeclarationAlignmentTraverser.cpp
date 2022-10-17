@@ -131,22 +131,24 @@ void DeclarationAlignmentTraverser::visitLeaf(TSNode, TraverserContext&) {}
 void DeclarationAlignmentTraverser::preVisitChild(TSNode, uint32_t, TraverserContext&) {}
 void DeclarationAlignmentTraverser::postVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
     // We need to look at all children all at once, not in a depth first fashion. We do that when we get called
-    // for the first child, and do nothing for the other children.
+    // for the first child, and do nothing for the other children. We can't look at the child because that would
+    // miss the top level node which can have declarations in it.
     if (childIndex != 0) {
         return;
     }
 
     TSSymbol symbol = ts_node_symbol(node);
 
-    if (symbol == TRANSLATION_UNIT || symbol == COMPOUND_STATEMENT) {
-        CheckVariables(node, context.style.alignment.variableDeclarations, context);
-        // CheckBitFields(node, context.style.alignment.bitFields);
-        // CheckVariables(node, context.style.alignment.variableDeclarations);
-        // CheckVariables(node, context.style.alignment.variableDeclarations);
+    if (context.style.alignment.variableDeclarations.align) {
+        if (symbol == TRANSLATION_UNIT || symbol == COMPOUND_STATEMENT) {
+            CheckVariables(node, context.style.alignment.variableDeclarations, context);
+        }
     }
 
-    if (symbol == FIELD_DECLARATION_LIST) {
-        CheckVariables(node, context.style.alignment.memberVariableDeclarations, context);
+    if (context.style.alignment.memberVariableDeclarations.align) {
+        if (symbol == FIELD_DECLARATION_LIST) {
+            CheckVariables(node, context.style.alignment.memberVariableDeclarations, context);
+        }
     }
 }
 }
