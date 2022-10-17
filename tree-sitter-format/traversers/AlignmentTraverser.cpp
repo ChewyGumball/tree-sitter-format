@@ -19,18 +19,52 @@ namespace {
         return child;
     }
 
-    void AlignDeclarations(TSNode node, const std::vector<uint32_t>& children, TraverserContext& context) {
-        uint32_t maxDistanceToName = 0;
+    bool isDeclarationLike(TSNode node) {
+        TSSymbol symbol = ts_node_symbol(node);
+        return symbol == DECLARATION ||
+               symbol == FIELD_DECLARATION;
+    }
 
+    bool isIdentifierLike(TSNode node) {
+        TSSymbol symbol = ts_node_symbol(node);
+        return symbol == IDENTIFIER ||
+               symbol == FIELD_IDENTIFIER;
+    }
+
+    void AlignNodes(const std::vector<TSNode>& nodes, TraverserContext& context) {
+        uint32_t maxColumn = 0;
+        
+        for(TSNode node : nodes) {
+            maxColumn = std::max(maxColumn, ts_node_start_point(node).column);
+        }
+
+        for(TSNode node : nodes) {
+            uint32_t startColumn = ts_node_start_point(node).column;
+
+            assert(startColumn <= maxColumn);
+            if (startColumn == maxColumn) {
+                continue;
+            }
+
+            uint32_t spaceToAdd = maxColumn - startColumn;
+            if (!spaces.contains(spaceToAdd)) {
+                spaces[spaceToAdd] = std::string(spaceToAdd, ' ');
+            }
+
+            context.edits.push_back(InsertEdit{.position = Position::StartOf(node), .bytes = spaces[spaceToAdd]});
+        }
+    }
+
+    void AlignDeclarations(TSNode node, const std::vector<uint32_t>& children, TraverserContext& context) {
         std::vector<TSNode> identifiers;
 
         for(uint32_t i : children) {
             TSNode child = ts_node_child(node, i);
-            assert(ts_node_symbol(child) == DECLARATION);
+            assert(isDeclarationLike(child));
 
             TSNode firstDeclarator = findNextNonExtraChild(child, 1);
 
-            while(ts_node_symbol(firstDeclarator) != IDENTIFIER) {
+            while(!isIdentifierLike(firstDeclarator)) {
                 if (ts_node_symbol(firstDeclarator) == INIT_DECLARATOR) {
                     firstDeclarator = ts_node_child(firstDeclarator, 0);
                 }
@@ -54,44 +88,46 @@ namespace {
                 if (ts_node_symbol(firstDeclarator) == PARENTHESIZED_DECLARATOR) {
                     firstDeclarator = findNextNonExtraChild(firstDeclarator, 1);
                 }
+
+                if (ts_node_symbol(firstDeclarator) == FIELD_DECLARATOR) {
+                    firstDeclarator = ts_node_child_by_field_name(firstDeclarator, "declarator", 10);
+                }
             }
 
-            maxDistanceToName = std::max(maxDistanceToName, ts_node_start_point(firstDeclarator).column);
             identifiers.push_back(firstDeclarator);
         }
 
-        for(TSNode identifier : identifiers) {
-            uint32_t startColumn = ts_node_start_point(identifier).column;
-
-            assert(startColumn <= maxDistanceToName);
-            if (startColumn == maxDistanceToName) {
-                continue;
-            }
-
-            uint32_t spaceToAdd = maxDistanceToName - startColumn;
-            if (!spaces.contains(spaceToAdd)) {
-                spaces[spaceToAdd] = std::string(spaceToAdd, ' ');
-            }
-
-            context.edits.push_back(InsertEdit{.position = Position::StartOf(identifier), .bytes = spaces[spaceToAdd]});
-        }
+        AlignNodes(identifiers, context);
     }
 
-    void CheckVariables(TSNode node, const Style::Alignment&, TraverserContext& context) {
+    void CheckVariables(TSNode node, const Style::Alignment& style, TraverserContext& context) {
         uint32_t childCount = ts_node_child_count(node);
 
         std::vector<std::vector<uint32_t>> consecutiveDeclarations;
 
         for(uint32_t i = 0; i < childCount; i++) {
             TSNode child = ts_node_child(node, i);
-            TSSymbol symbol = ts_node_symbol(child);
 
-            if (symbol == DECLARATION) {
+            if (isDeclarationLike(child)) {
                 std::vector<uint32_t> list;
+                list.push_back(i++);
 
+                uint32_t previousLine = ts_node_end_point(child).row;
                 for(; i < childCount; i++) {
                     TSNode c = ts_node_child(node, i);
-                    if (ts_node_symbol(c) == DECLARATION) {
+                    uint32_t currentLine = ts_node_end_point(c).row;
+
+                    bool isSameLine = previousLine + 1 != currentLine;
+                    previousLine = currentLine;
+                    
+                    if (style.acrossComments && ts_node_is_extra(c)) {
+                        continue;
+                    }
+
+                    if (isDeclarationLike(c)) {
+                        if (!style.acrossEmptyLines && isSameLine) {
+                            break;
+                        }
                         list.push_back(i);
                     }
                     else {
@@ -130,6 +166,10 @@ void AlignmentTraverser::postVisitChild(TSNode node, uint32_t childIndex, Traver
         // CheckBitFields(node, context.style.alignment.bitFields);
         // CheckVariables(node, context.style.alignment.variableDeclarations);
         // CheckVariables(node, context.style.alignment.variableDeclarations);
+    }
+
+    if (symbol == FIELD_DECLARATION_LIST) {
+        CheckVariables(node, context.style.alignment.memberVariableDeclarations, context);
     }
 }
 }

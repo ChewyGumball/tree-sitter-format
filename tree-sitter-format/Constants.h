@@ -31,6 +31,10 @@ inline const TSSymbol ARRAY_DECLARATOR = ts_language_symbol_for_name(tree_sitter
 inline const TSSymbol ATTRIBUTED_DECLARATOR = ts_language_symbol_for_name(tree_sitter_cpp(), "attributed_declarator", 21, true);
 inline const TSSymbol FUNCTION_DECLARATOR = ts_language_symbol_for_name(tree_sitter_cpp(), "function_declarator", 19, true);
 inline const TSSymbol PARENTHESIZED_DECLARATOR = ts_language_symbol_for_name(tree_sitter_cpp(), "parenthesized_declarator", 24, true);
+inline const TSSymbol FIELD_DECLARATOR = ts_language_symbol_for_name(tree_sitter_cpp(), "field_declarator", 16, true);
+
+inline const TSSymbol FIELD_DECLARATION = ts_language_symbol_for_name(tree_sitter_cpp(), "field_declaration", 17, true);
+inline const TSSymbol FIELD_IDENTIFIER = ts_language_symbol_for_name(tree_sitter_cpp(), "field_identifier", 16, true);
 
 // Regular code block
 inline const TSSymbol COMPOUND_STATEMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "compound_statement", 18, true);
