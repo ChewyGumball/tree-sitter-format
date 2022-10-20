@@ -223,6 +223,35 @@ namespace {
         }
     }
 
+    Style::Justify GetOptionalJustification(YAML::Node node, const std::string& name, Style::Justify defaultValue) {
+        YAML::Node justification = node[name];
+
+        if (!justification.IsDefined()) {
+            return defaultValue;
+        }
+
+        if (!justification.IsScalar()) {
+            YAML::Mark mark = node.Mark();
+            std::cerr << "Expected field '" << name << "' on line " << mark.line << " to be a scalar value, but it wasn't!" << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+
+        std::string value = justification.as<std::string>();
+
+        if (value == "right") {
+            return Style::Justify::Right;
+        } else if (value == "left") {
+            return Style::Justify::Left;
+        } else {
+            YAML::Mark mark = node.Mark();
+            std::cerr << "Expected field '" << name << "' on line " << mark.line << " to have one of the following values:" << std::endl;
+            std::cerr << "\right, left" << std::endl;
+            std::cerr << "but it was: " << value << std::endl;
+
+            std::exit(EXIT_FAILURE);
+        }
+    }
+
     uint32_t GetOptionalInt(YAML::Node node, const std::string& name, uint32_t defaultValue) {
         YAML::Node value = node[name];
 
@@ -345,6 +374,11 @@ namespace {
         SetBool(alignmentYAML, "align", alignment.align);
         SetBool(alignmentYAML, "across_comments", alignment.acrossComments);
         SetBool(alignmentYAML, "across_empty_lines", alignment.acrossEmptyLines);
+    }
+
+    void SetJustification(YAML::Node node, const std::string& name, Style::Justify& justification) {
+        justification = GetOptionalJustification(node, name, justification);
+
     }
 }
 
@@ -1198,6 +1232,11 @@ namespace tree_sitter_format {
         SetAlignment(alignment, "bit_fields", style.alignment.bitFields);
         SetAlignment(alignment, "macros", style.alignment.macros);
         SetAlignment(alignment, "escaped_new_lines", style.alignment.escapedNewlines);
+        SetAlignment(alignment, "initializer_lists", style.alignment.initializerLists.alignment);
+
+        YAML::Node initializerList = GetMap(alignment, "initializer_lists");
+        SetBool(initializerList, "align_commas_separately", style.alignment.initializerLists.alignCommasSeparately);
+        SetJustification(initializerList, "justification", style.alignment.initializerLists.justification);
 
         return style;
     }
