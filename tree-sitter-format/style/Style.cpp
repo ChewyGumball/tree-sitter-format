@@ -369,6 +369,25 @@ namespace tree_sitter_format {
         // AccessModifierOffset 
         // AlignAfterOpenBracket
         // AlignArrayOfStructures
+        std::string alignInitializers = GetOptionalString(root, "AlignArrayOfStructures", "None");
+        style.alignment.initializerLists.alignment.acrossComments = false;
+        style.alignment.initializerLists.alignment.acrossEmptyLines = false;
+
+        if (alignInitializers == "None") {
+            style.alignment.initializerLists.alignment.align = false;
+            style.alignment.initializerLists.justification = Style::Justify::Left;
+        } else if (alignInitializers == "Left") {
+            style.alignment.initializerLists.alignment.align = true;
+            style.alignment.initializerLists.alignCommasSeparately = false;
+            style.alignment.initializerLists.justification = Style::Justify::Left;
+        } else if (alignInitializers == "Right") {
+            style.alignment.initializerLists.alignment.align = true;
+            style.alignment.initializerLists.alignCommasSeparately = true;
+            style.alignment.initializerLists.justification = Style::Justify::Right;
+        } else {
+            std::cerr << "Unknown value of 'AlignArrayOfStructures': " << alignInitializers << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
 
         // AlignConsecutiveAssignments
         SetAlignmentClangFormat(root, "AlignConsecutiveAssignments", style.alignment.assignments);
@@ -400,7 +419,7 @@ namespace tree_sitter_format {
         // AllowShortLoopsOnASingleLine 
 
         // AlwaysBreakAfterDefinitionReturnType 
-        std::string definitionReturnType = GetOptionalString(root, "AlwaysBreakAfterDefinitionReturnType ", "None");
+        std::string definitionReturnType = GetOptionalString(root, "AlwaysBreakAfterDefinitionReturnType", "None");
         if (definitionReturnType == "All") {
             style.spacing.functionDefinitions.returnType = RequiredWhitespace::Newline;
         }

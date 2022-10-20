@@ -11,6 +11,7 @@ tsf_cc_binary(
         ":declaration_alignment_traverser",
         ":bitfield_alignment_traverser",
         ":assignment_alignment_traverser",
+        ":initializer_list_alignment_traverser",
         ":constants",
         ":configuration",
         ":document",
@@ -99,6 +100,19 @@ tsf_cc_library(
     visibility = ["//visibility:public"],
     hdrs = ["traversers/AssignmentAlignmentTraverser.h"],
     srcs = ["traversers/AssignmentAlignmentTraverser.cpp"],
+    include_prefix = "tree_sitter_format",
+    deps = [
+        ":constants",
+        ":traverser",
+        ":util",
+    ],
+)
+
+tsf_cc_library(
+    name = "initializer_list_alignment_traverser",
+    visibility = ["//visibility:public"],
+    hdrs = ["traversers/InitializerListAlignmentTraverser.h"],
+    srcs = ["traversers/InitializerListAlignmentTraverser.cpp"],
     include_prefix = "tree_sitter_format",
     deps = [
         ":constants",

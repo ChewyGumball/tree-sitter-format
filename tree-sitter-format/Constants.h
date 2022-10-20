@@ -60,4 +60,8 @@ inline const TSSymbol COMMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "
 inline const TSSymbol TRANSLATION_UNIT = ts_language_symbol_for_name(tree_sitter_cpp(), "translation_unit", 16, true);
 inline const TSSymbol ERROR = ts_language_symbol_for_name(tree_sitter_cpp(), "ERROR", 5, true);
 
+inline const TSSymbol COMMA = ts_language_symbol_for_name(tree_sitter_cpp(), ",", 1, false);
+inline const TSSymbol LEFT_BRACKET = ts_language_symbol_for_name(tree_sitter_cpp(), "{", 1, false);
+inline const TSSymbol RIGHT_BRACKET = ts_language_symbol_for_name(tree_sitter_cpp(), "}", 1, false);
+
 }

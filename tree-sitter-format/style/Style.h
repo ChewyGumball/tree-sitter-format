@@ -528,7 +528,21 @@ struct Style {
         bool acrossEmptyLines;
     };
 
+    enum class Justify { Left, Right };
+
     struct {
+        struct {
+            Alignment alignment  {
+                .align = true,
+                .acrossComments = false,
+                .acrossEmptyLines = false,
+            };
+
+            bool alignCommasSeparately = false;
+
+            Justify justification = Justify::Left;
+        }  initializerLists;
+        
         Alignment variableDeclarations {
             .align = true,
             .acrossComments = false,
