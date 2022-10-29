@@ -23,27 +23,6 @@ const TSLanguage* tree_sitter_cpp(void);
 
 namespace tree_sitter_format {
 
-    Document::Location Document::findByteLocation(uint32_t position) const {
-        assert(position < length);
-
-        for(size_t i = 0, currentLength = 0; i < elements.size(); i++) {
-            size_t nextSize = elements[i].size();
-
-            if (currentLength + nextSize > position) {
-                return Location {
-                    .index = i,
-                    .offset = position - currentLength,
-                };
-            }
-
-            currentLength += nextSize;
-        }
-
-        assert(false);
-        // We should never get here
-        return Location();
-    }
-
     size_t Document::splitAtPosition(uint32_t position) {
         assert(position <= length);
 
@@ -86,9 +65,14 @@ namespace tree_sitter_format {
 
     Document::Document(const std::string& contents) : Document(std::string(contents)) {}
 
-    Document::Document(std::string&& contents) : original(std::move(contents)), elements({original}), length(original.size()), parser(ts_parser_new(), ts_parser_delete), tree(nullptr, ts_tree_delete) {       
+    Document::Document(std::string&& contents) : original(std::move(contents)), parser(ts_parser_new(), ts_parser_delete), tree(nullptr, ts_tree_delete) {               
+        elements.emplace_back(original);
+        length = original.size();
+
         ts_parser_set_language(parser.get(), tree_sitter_cpp());
         tree.reset(ts_parser_parse(parser.get(), nullptr, inputReader()));
+
+        elementRange.end = Position::EndOf(root());
     }
 
     void Document::insertBytes(Position position, std::string_view bytes) {
@@ -161,6 +145,7 @@ namespace tree_sitter_format {
         }
         
         tree.reset(ts_parser_parse(parser.get(), tree.release(), inputReader()));
+        elementRange.end = Position::EndOf(root());
         // TODO delete old tree or no?
     }
 
@@ -170,148 +155,6 @@ namespace tree_sitter_format {
     
     const std::string_view Document::originalContentsAt(Range range) const {
         return std::string_view(original).substr(range.start.byteOffset, range.byteCount());
-    }
-    
-    std::string Document::toString() const {
-        std::ostringstream s;
-        s << *this;
-        return s.str();
-    }
-    
-    std::string Document::contentsAt(Range range) const {
-        std::ostringstream s;
-
-        Location location = findByteLocation(range.start.byteOffset);
-
-        size_t index = location.index;
-        uint32_t remaining = range.byteCount();
-
-        std::string_view element = elements[index++];
-        element.remove_prefix(location.offset);
-        if (range.byteCount() < element.size()) {
-            element.remove_suffix(element.size() - range.byteCount());
-        }
-        s << element;
-
-        remaining -= uint32_t(element.size());
-        while (remaining > 0) {
-            element = elements[index++];
-            if (remaining > element.size()) {
-                element.remove_suffix(element.size() - remaining);
-            }
-
-            s << element;
-            remaining -= uint32_t(element.size());
-        }
-
-        return s.str();
-    }
-
-    
-    char Document::characterAt(uint32_t bytePosition) const {
-        Location location = findByteLocation(bytePosition);
-        return elements[location.index][location.offset];
-    }
-
-    
-    Range Document::toNextNewLine(Position start) const {
-        Location location = findByteLocation(start.byteOffset);
-
-        static constexpr char8_t UTF8ContinuationMask = 0b11000000;
-        static constexpr char8_t UTF8ContinuationValue = 0b10000000;
-
-        uint32_t column = start.location.column;
-        uint32_t byteOffset = start.byteOffset;
-
-        for (size_t index = location.index; index < elements.size(); index++) {
-            size_t startOffset = index == location.index ? location.offset : 0;
-
-            for (size_t offset = startOffset; offset < elements[index].size(); offset++) {
-                char character = elements[index][offset];
-
-                char masked = character & UTF8ContinuationMask;
-                bool isContinuation = masked == UTF8ContinuationValue;
-
-                if (!isContinuation) {
-                    if (character == '\r' || character == '\n') {
-                        Position newLinePosition {
-                            .location = TSPoint {
-                                .row = start.location.row,
-                                .column = column,
-                            },
-                            .byteOffset = byteOffset,
-                        };
-
-                        return Range {
-                            .start = start,
-                            .end = newLinePosition,
-                        };
-                    }
-
-                    column++;
-                }
-                byteOffset++;
-            }
-        }
-        
-        Position endOfFilePosition {
-            .location = TSPoint {
-                .row = start.location.row,
-                .column = column,
-            },
-            .byteOffset = byteOffset,
-        };
-
-        return Range {
-            .start = start,
-            .end = endOfFilePosition,
-        };
-    }
-
-    
-    Range Document::toPreviousNewLine(Position end) const {
-        Location location = findByteLocation(end.byteOffset);
-
-        static constexpr char8_t UTF8ContinuationMask = 0b11000000;
-        static constexpr char8_t UTF8ContinuationValue = 0b10000000;
-
-        uint32_t column = end.location.column;
-        uint32_t byteOffset = end.byteOffset;
-
-        while (column > 0) {
-            char character = elements[location.index][location.offset];
-
-            char masked = character & UTF8ContinuationMask;
-            bool isContinuation = masked == UTF8ContinuationValue;
-
-            if (!isContinuation) {
-                column--;
-            }
-            byteOffset--;
-            
-            if (location.offset == 0) {
-                if (location.index > 0) {
-                    location.index--;
-                    location.offset = elements[location.index].size() - 1;
-                }
-                else {
-                    assert(column == 0);
-                }
-            }
-        }
-        
-        Position start {
-            .location = TSPoint {
-                .row = end.location.row,
-                .column = column,
-            },
-            .byteOffset = byteOffset,
-        };
-
-        return Range {
-            .start = start,
-            .end = end,
-        };
     }
     
     TSNode Document::root() const {
@@ -324,14 +167,6 @@ namespace tree_sitter_format {
             .read = &Document::Read,
             .encoding = TSInputEncodingUTF8,
         };
-    }
-
-    std::ostream& operator<<(std::ostream& out, const Document& document) {
-        for(const std::string_view& e : document.elements) {
-            out << e;
-        }
-
-        return out;
     }
 
 }

@@ -14,6 +14,7 @@ struct Position {
     static Position EndOf(TSNode node);
 };
 
+bool operator!=(const Position& lhs, const Position& rhs);
 std::strong_ordering operator<=>(const Position& lhs, const Position& rhs);
 
 }

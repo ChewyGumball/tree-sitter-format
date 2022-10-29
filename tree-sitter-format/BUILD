@@ -23,11 +23,31 @@ tsf_cc_binary(
 )
 
 tsf_cc_library(
+    name = "unicode_iterator",
+    hdrs = ["document/UnicodeIterator.h"],
+    srcs = ["document/UnicodeIterator.cpp"],
+    include_prefix = "tree_sitter_format",
+)
+
+tsf_cc_library(
     name = "traverser",
     hdrs = ["traversers/Traverser.h"],
     srcs = ["traversers/Traverser.cpp"],
     include_prefix = "tree_sitter_format",
     deps = [":edits", ":document", ":style", "@tree-sitter"],
+)
+
+tsf_cc_library(
+    name = "comment_reflow_traverser",
+    visibility = ["//visibility:public"],
+    hdrs = ["traversers/CommentReflowTraverser.h"],
+    srcs = ["traversers/CommentReflowTraverser.cpp"],
+    include_prefix = "tree_sitter_format",
+    deps = [
+        ":constants",
+        ":traverser",
+        ":util",
+    ],
 )
 
 tsf_cc_library(
@@ -193,12 +213,26 @@ tsf_cc_library(
 )
 
 tsf_cc_library(
+    name = "document_slice",
+    hdrs = ["document/DocumentSlice.h"],
+    srcs = ["document/DocumentSlice.cpp"],
+    include_prefix = "tree_sitter_format",
+    deps = [
+        ":unicode_iterator",
+        ":position",
+        ":range",
+        "@tree-sitter"
+    ],
+)
+
+tsf_cc_library(
     name = "document",
     visibility = ["//visibility:public"],
     hdrs = ["document/Document.h"],
     srcs = ["document/Document.cpp"],
     include_prefix = "tree_sitter_format",
     deps = [
+        ":document_slice",
         ":edits",
         ":position",
         ":range",

@@ -46,7 +46,7 @@ int main() {
     style.indentation.reindent = false;
 
     Document document(inputFileName);
-    std::cout << "Input Text: " << std::endl << document << std::endl;
+    std::cout << "Input Text: " << std::endl << std::endl;
 
     TSNode root = document.root();
 

@@ -8,6 +8,11 @@ namespace tree_sitter_format {
 struct Style {
     uint32_t targetLineLength = 120;
 
+    struct {
+        bool reflow = true;
+        bool alignTrailing = false;
+    } comments;
+
     enum class IndentationWhitespace { Spaces, Tabs };
     enum class Indentation { BracesIndented, BodyIndented, BothIndented, None };
 

@@ -17,6 +17,12 @@ Position Position::EndOf(TSNode node) {
 }
 
 
+bool operator!=(const Position& lhs, const Position& rhs) {
+    return lhs.location.column == rhs.location.column &&
+           lhs.location.row == rhs.location.row &&
+           lhs.byteOffset == rhs.byteOffset;
+}
+
 std::strong_ordering operator<=>(const Position& lhs, const Position& rhs) {
     if (lhs.location.row == rhs.location.row) {
         return lhs.location.column <=> rhs.location.column;

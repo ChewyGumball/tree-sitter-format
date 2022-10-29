@@ -63,5 +63,7 @@ inline const TSSymbol ERROR = ts_language_symbol_for_name(tree_sitter_cpp(), "ER
 inline const TSSymbol COMMA = ts_language_symbol_for_name(tree_sitter_cpp(), ",", 1, false);
 inline const TSSymbol LEFT_BRACKET = ts_language_symbol_for_name(tree_sitter_cpp(), "{", 1, false);
 inline const TSSymbol RIGHT_BRACKET = ts_language_symbol_for_name(tree_sitter_cpp(), "}", 1, false);
+inline const TSSymbol SINGLE_LINE_COMMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "//", 2, false);
+inline const TSSymbol MULTI_LINE_COMMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "/*", 2, false);
 
 }
