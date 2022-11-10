@@ -23,9 +23,24 @@ tsf_cc_binary(
 )
 
 tsf_cc_library(
+    name = "text_reflower",
+    hdrs = ["document/TextReflower.h"],
+    srcs = ["document/TextReflower.cpp"],
+    deps = [
+        ":document_slice",
+        ":util"
+    ],
+    include_prefix = "tree_sitter_format",
+)
+
+tsf_cc_library(
     name = "unicode_iterator",
     hdrs = ["document/UnicodeIterator.h"],
     srcs = ["document/UnicodeIterator.cpp"],
+    deps = [
+        ":position",
+        ":range",
+    ],
     include_prefix = "tree_sitter_format",
 )
 
@@ -47,6 +62,7 @@ tsf_cc_library(
         ":constants",
         ":traverser",
         ":util",
+        ":text_reflower",
     ],
 )
 
@@ -221,6 +237,7 @@ tsf_cc_library(
         ":unicode_iterator",
         ":position",
         ":range",
+        ":util",
         "@tree-sitter"
     ],
 )

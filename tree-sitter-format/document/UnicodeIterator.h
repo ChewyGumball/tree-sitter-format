@@ -1,11 +1,27 @@
 #pragma once
 
+#include <tree_sitter_format/document/Position.h>
+#include <tree_sitter_format/document/Range.h>
+
 #include <cassert>
+#include <compare>
 #include <iterator>
 #include <string_view>
 #include <vector>
 
 namespace tree_sitter_format {
+    struct Location {
+        size_t index;
+        size_t offset;
+
+        Position position;
+
+        // Note: these are comparing the location within a vector of
+        //       elements, NOT the position
+        bool operator==(const Location& other) const;
+        std::weak_ordering operator<=>(const Location& other) const;
+    };
+
     class UnicodeIterator : public std::iterator<std::forward_iterator_tag,
                                                  char32_t,
                                                  size_t,
@@ -16,25 +32,30 @@ namespace tree_sitter_format {
     private:
         const std::vector<std::string_view>& elements;
         
-        size_t currentStartIndex;
-        size_t currentStartOffset;
-        size_t currentEndIndex;
-        size_t currentEndOffset;
+        Location current;
+        Location next;
+        Location end;
 
         char32_t currentValue;
 
     public:
-        explicit UnicodeIterator(const std::vector<std::string_view>& elmenets);
-        UnicodeIterator(const std::vector<std::string_view>& elements, size_t startIndex, size_t startOffset);
+        explicit UnicodeIterator(const std::vector<std::string_view>& elements);
+        UnicodeIterator(const std::vector<std::string_view>& elements, const Range& range);
+        UnicodeIterator(const std::vector<std::string_view>& elements, const Location& start, const Location& end);
+
+        // Don't allow temporary element vectors since we only store a reference to them. This object doesn't own the elements
+        // just iterates over them.
+        explicit UnicodeIterator(const std::vector<std::string_view>&& elements) = delete;
+        UnicodeIterator(const std::vector<std::string_view>&& elements, const Range& range) = delete;
+        UnicodeIterator(const std::vector<std::string_view>&& elements, const Location& start, const Location& end) = delete;
 
         UnicodeIterator(const UnicodeIterator& other) = default;
 
-        size_t startIndex() const { return currentStartIndex; }
-        size_t startOffset() const { return currentStartOffset; }
-        size_t endIndex() const { return currentEndIndex; }
-        size_t endOffset() const { return currentEndOffset; }
+        const Position& currentPosition() const { return current.position; }
+        bool atEnd() const { return current == end; }
 
-        UnicodeIterator& operator++(int);
+        UnicodeIterator operator++(int);
+        UnicodeIterator& operator++();
 
         bool operator==(const UnicodeIterator& other) const;
         bool operator!=(const UnicodeIterator& other) const;

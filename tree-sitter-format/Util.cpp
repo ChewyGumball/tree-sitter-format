@@ -2,6 +2,7 @@
 
 #include <tree_sitter_format/Constants.h>
 
+#include <array>
 #include <unordered_map>
 #include <assert.h>
 
@@ -161,6 +162,42 @@ std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
     }
 
     return spaces[count];
+}
+
+
+[[nodiscard]] bool IsWhitespace(char32_t character) {
+    return character == ' ' || character == '\t' || character == '\n' || character == '\r';
+}
+
+[[nodiscard]] bool IsDigit(char32_t character) {
+    return character == '0' ||
+           character == '1' ||
+           character == '2' ||
+           character == '3' ||
+           character == '4' ||
+           character == '5' ||
+           character == '6' ||
+           character == '7' ||
+           character == '8' ||
+           character == '9';
+}
+
+[[nodiscard]] bool IsPunctuation(char32_t character) {
+    static std::array<char, 32> PunctuationCharacters = {
+        '`', '~', '!', '@', '#', '$', '%',
+        '^', '&', '*', '(', ')', '-', '_',
+        '=', '+', '[', '{', ']', '}', '\\',
+        '|', ';', ':', '\'', '"', ',', '<',
+        '.', '>', '/', '?'
+    };
+
+    for(char c : PunctuationCharacters) {
+        if (character == char32_t(c)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 }

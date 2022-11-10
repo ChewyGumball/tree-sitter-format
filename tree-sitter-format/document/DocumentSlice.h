@@ -17,11 +17,6 @@ protected:
 
     DocumentSlice() = default;
 
-    struct Location {
-        size_t index;
-        size_t offset;
-    };
-
     Location findByteLocation(uint32_t position) const;
 
 public:
@@ -34,6 +29,7 @@ public:
     const Range& range() const { return elementRange; }
 
     DocumentSlice slice(const Range& subRange) const;
+    DocumentSlice trimFront() const;
 
     const std::vector<std::string_view>& contents() const { return elements;}
     std::vector<std::string_view> contentsAt(Range subRange) const;

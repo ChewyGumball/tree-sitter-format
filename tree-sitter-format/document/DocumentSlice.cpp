@@ -1,11 +1,13 @@
 #include <tree_sitter_format/document/DocumentSlice.h>
 
+#include <tree_sitter_format/Util.h>
+
 #include <cassert>
 #include <optional>
 #include <sstream>
 
 namespace tree_sitter_format {
-    DocumentSlice::Location DocumentSlice::findByteLocation(uint32_t position) const {
+    Location DocumentSlice::findByteLocation(uint32_t position) const {
         assert(position >= elementRange.start.byteOffset);
 
         uint32_t relativePosition = position - elementRange.start.byteOffset;
@@ -14,10 +16,10 @@ namespace tree_sitter_format {
         for(size_t i = 0, currentLength = 0; i < elements.size(); i++) {
             size_t nextSize = elements[i].size();
 
-            if (currentLength + nextSize > position) {
+            if (currentLength + nextSize > relativePosition) {
                 return Location {
                     .index = i,
-                    .offset = position - currentLength,
+                    .offset = relativePosition - currentLength,
                 };
             }
 
@@ -42,8 +44,30 @@ namespace tree_sitter_format {
         return DocumentSlice(subRange, contentsAt(subRange));
     }
 
+    
+    DocumentSlice DocumentSlice::trimFront() const {
+        UnicodeIterator front = begin();
+        UnicodeIterator back = end();
+        while(front != back && IsWhitespace(*front)) {
+            front++;
+        }
+
+        Range subRange {
+            .start = front.currentPosition(),
+            .end = elementRange.end,
+        };
+        
+        return slice(subRange);
+    }
+
     std::vector<std::string_view> DocumentSlice::contentsAt(Range subRange) const {
-       std::vector<std::string_view> contents;
+        std::vector<std::string_view> contents;
+
+        // If the subrange is empty, just return an empty contents.
+        if (subRange.start == subRange.end) {
+            contents.push_back(std::string_view());
+            return contents;
+        }
 
         Location location = findByteLocation(subRange.start.byteOffset);
 
@@ -134,6 +158,8 @@ namespace tree_sitter_format {
 
         std::optional<Position> newLineStart;
 
+        bool previousCharacterWasEscape = false;
+
         for (size_t index = location.index; index < elements.size(); index++) {
             size_t startOffset = index == location.index ? location.offset : 0;
 
@@ -144,8 +170,8 @@ namespace tree_sitter_format {
                     if (character != '\n') {
                         Position newLineEnd {
                             .location = TSPoint {
-                                .row = start.location.row,
-                                .column = column,
+                                .row = start.location.row + 1,
+                                .column = 0,
                             },
                             .byteOffset = byteOffset,
                         };
@@ -161,7 +187,8 @@ namespace tree_sitter_format {
                 bool isContinuation = masked == UTF8ContinuationValue;
 
                 if (!isContinuation) {
-                    if (character == '\r' || character == '\n') {
+                    bool isVerticalWhitespace = character == '\r' || character == '\n';
+                    if (!previousCharacterWasEscape && isVerticalWhitespace) {
                         newLineStart = Position {
                             .location = TSPoint {
                                 .row = start.location.row,
@@ -169,8 +196,27 @@ namespace tree_sitter_format {
                             },
                             .byteOffset = byteOffset,
                         };
+
+                        // If the character is a line feed, we are done. If it is
+                        // a carriage return, we need to keep going to find the
+                        // line feed character.
+                        if (character == '\n') {
+                            Position newLineEnd {
+                                .location = TSPoint {
+                                    .row = start.location.row + 1,
+                                    .column = 0,
+                                },
+                                .byteOffset = byteOffset + 1,
+                            };
+
+                            return Range {
+                                .start = newLineStart.value(),
+                                .end = newLineEnd,
+                            };
+                        }
                     }
 
+                    previousCharacterWasEscape = !previousCharacterWasEscape && character == '\\';
                     column++;
                 }
                 byteOffset++;
@@ -249,10 +295,16 @@ namespace tree_sitter_format {
 
 
     UnicodeIterator DocumentSlice::begin() const {
-        return UnicodeIterator(elements);
+        return UnicodeIterator(elements, elementRange);
     }
     UnicodeIterator DocumentSlice::end() const {
-        return UnicodeIterator(elements, elements.size() - 1, elements.back().size());
+        Location end {
+            .index = elements.size() - 1,
+            .offset = elements.back().size(),
+            .position = elementRange.end,
+        };
+
+        return UnicodeIterator(elements, end, end);
     }
 
     std::string DocumentSlice::toString() const {

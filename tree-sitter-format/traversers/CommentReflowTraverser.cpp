@@ -3,11 +3,15 @@
 #include <tree_sitter_format/Constants.h>
 #include <tree_sitter_format/Util.h>
 #include <tree_sitter_format/document/Document.h>
+#include <tree_sitter_format/document/TextReflower.h>
 
+#include <array>
 #include <assert.h>
 #include <unordered_map>
 #include <forward_list>
 #include <iostream>
+#include <variant>
+#include <vector>
 
 // At some point, look at https://github.com/CLD2Owners/cld2 to detect locale
 // then use https://unicode-org.github.io/icu/userguide/boundaryanalysis/ to 
@@ -35,168 +39,41 @@ namespace {
         std::string_view text = document.originalContentsAt(Range::Of(node));
         return text.starts_with("//");        
     }
-
-    // void ReflowComments(TSNode node, const std::vector<uint32_t>& children, TraverserContext& context) {
-    //     // 3. consecutive single line comments will be merged if they start at the same column and have no
-    //     //      empty lines between them
-    // }
-
-    bool IsWhitespace(char32_t character) {
-        return character == ' ' || character == '\t';
-    }
-
-    struct Word {
-        std::vector<std::string_view> elements;
-        uint32_t length;
-    };
     
-    std::vector<Word> SeparateWords(const DocumentSlice& line) {
-        std::vector<Word> words;
+    void RemovePrefix(std::vector<DocumentSlice>& lines, const std::string_view& prefix) {
+        bool allSame = lines.size() > 1;
+        size_t lastLineToCheck = lines.size();
 
-        UnicodeIterator character = line.begin();
-        UnicodeIterator end = line.end();
+        // If the last line only has the close comment token on it, don't check it for a prefix since
+        // it doesn't need one. The close token has already been removed, so if we trim the last line
+        // and it is empty, then it only had the close comment token.
+        if (lastLineToCheck > 1) {
+            std::string lastLine = lines.back().trimFront().toString();
 
-        while(character != end) {
-            while(character != end && IsWhitespace(*character)) {
-                character++;
+            if (lastLine == "") {
+                lastLineToCheck--;
             }
-
-            if (character == end) {
-                // We only have whitespace left on the line, so no more words
-                break;
-            }
-
-            // byte count is not the same as column count, so we have to keep
-            // track of it separately.
-            uint32_t length = 0;
-            UnicodeIterator start = character;
-
-            while(character != end && !IsWhitespace(*character)) {
-                character++;
-                length++;
-            }
-
-            words.push_back(Word{
-                .elements = UnicodeIterator::ElementsBetween(start, character),
-                .length = length,
-            });
         }
 
-        return words;
-    }
-
-    std::vector<std::vector<Word>> SeparateWords(const std::vector<DocumentSlice>& lines) {
-        std::vector<std::vector<Word>> words;
-        for(const DocumentSlice& line : lines) {
-            words.emplace_back(SeparateWords(line));
-        }
-
-        return words;
-    }
-
-    std::vector<std::vector<std::string_view>> ReflowParagraph(const std::vector<std::vector<Word>>& lines, size_t startLine, size_t endLine, uint32_t firstLineOffset, uint32_t targetLineLength) {
-        std::vector<std::vector<std::string_view>> reflowedLines;
-
-        uint32_t currentLineLength = firstLineOffset;
-        std::vector<std::string_view> currentLine;
-
-        for(size_t lineIndex = startLine; lineIndex < endLine; lineIndex++) {
-            for(const Word& word : lines[lineIndex]) {
-                currentLineLength += word.length;
-
-                // If adding the next word would cause the current line to go past the target line length,
-                // record the line, then start a new line. Also, we want at least one word per line, so
-                // if the current line is empty, don't start a new line yet.
-                if (currentLineLength > targetLineLength && !currentLine.empty()) {
-                    // The last element is a space, which we don't need to keep so remove it before
-                    // recording the line.
-                    currentLine.pop_back();
-
-                    // Record the current line
-                    reflowedLines.push_back(currentLine);
-
-                    // Start a new line
-                    currentLine.clear();
-                    currentLineLength = word.length;
-                }
-
-                // Add the next word to the line
-                currentLine.insert(currentLine.end(), word.elements.begin(), word.elements.end());
-
-                // Add a space to the line
-                currentLine.push_back(" "sv);
-                currentLineLength++;
-            }       
-        }
-
-        // If we had something on the last line, record it
-        if (!currentLine.empty()) {
-            currentLine.pop_back();
-            reflowedLines.push_back(currentLine);
-        }
-
-        return reflowedLines;
-    }
-
-    std::vector<std::vector<std::string_view>> ReflowLines(const std::vector<DocumentSlice> & lines, uint32_t firstLineOffset, uint32_t nonFirstLineOffset, uint32_t targetLineLength) {
-        std::vector<std::vector<Word>> words = SeparateWords(lines);
-
-        size_t startLine = 0;
-        size_t endLine = 0;
-
-        std::vector<std::vector<std::string_view>> reflowedLines;
-        for(const std::vector<Word>& line : words) {
-            if (line.empty()) {
-
-                // This can happen if there are multiple blank lines in a row
-                if (startLine != endLine) {
-                    // Reflow the paragraph up to this blank line
-                    const bool isFirstLine = startLine == 0;
-                    uint32_t offset = isFirstLine ? firstLineOffset : nonFirstLineOffset;
-                    std::vector<std::vector<std::string_view>> reflowed = ReflowParagraph(words, startLine, endLine, offset, targetLineLength);
-
-                    // Record the paragraph
-                    reflowedLines.insert(reflowedLines.end(), reflowed.begin(), reflowed.end());
-                }
-
-                // Add this blank line
-                reflowedLines.emplace_back();
-
-                startLine = endLine + 1;
-            }
-
-            endLine++;
-        }
-
-        // Add the last unrecorded paragraph if there is one
-        if (startLine != endLine) {
-            const bool isFirstLine = startLine == 0;
-            uint32_t offset = isFirstLine ? firstLineOffset : nonFirstLineOffset;
-            std::vector<std::vector<std::string_view>> reflowed = ReflowParagraph(words, startLine, endLine, offset, targetLineLength);
-            reflowedLines.insert(reflowedLines.end(), reflowed.begin(), reflowed.end());
-        }
-
-        return reflowedLines;
-    }
-
-    bool RemovePrefix(std::vector<DocumentSlice>& lines, const std::string_view& prefix, const std::string_view& lastLinePrefix) {
-        bool allSame = true;
-
-        // We skip the first line because it starts with a /* always
-        for(size_t i = 1; allSame && i < lines.size(); i++) {
-            const std::string_view& check = i == lines.size() - 1 ? lastLinePrefix : prefix;
-            if (!lines[i].startsWith(check)) {
+        // We skip the first line because it starts with  "/*" always
+        for(size_t i = 1; allSame && i < lastLineToCheck; i++) {
+            if (!lines[i].startsWith(prefix)) {
                 allSame = false;
             }
         }
 
+        // If all the lines start with the same prefix, remove the prefix!
         if (allSame) {
-            for(size_t i = 1; allSame && i < lines.size(); i++) {
-                const std::string_view& remove = i == lines.size() - 1 ? lastLinePrefix : prefix;
+            std::vector<std::string_view> prefixVector = {prefix};
+            UnicodeIterator prefixIterator(prefixVector);
+            while(!prefixIterator.atEnd()) {
+                prefixIterator++;
+            }
 
+            for(size_t i = 1; allSame && i < lastLineToCheck; i++) {
                 Position newStart = lines[i].startPosition();
-                newStart.location.column += uint32_t(remove.size());
-                newStart.byteOffset += uint32_t(remove.size());
+                newStart.location.column += prefixIterator.currentPosition().location.column;
+                newStart.byteOffset += prefixIterator.currentPosition().byteOffset;
                 
                 Range trimmedRange {
                     .start = newStart,
@@ -206,19 +83,23 @@ namespace {
                 lines[i] = lines[i].slice(trimmedRange);
             }
         }
-
-        return allSame;
     }
 
-    void ReflowMultiLineComment(TSNode node, TraverserContext& context) {
-        // 1. multiline comments where all lines start with " *" will continue to do so after reflow.
-        // 2. consecutive multiline comments will not be merged
-        // 3. empty lines at the beginning of a multiline comment will be removed.
-        // 4. if a word on a line by itself is still past the line length, the line length is ignored
-        //       and the word is allowed on that line (it is a "target" line length after all).
-        
-        assert(IsMultiLineComment(node, context.document));
+    [[nodiscard]] bool LineIsEmpty(const DocumentSlice& line) {
+        return line.trimFront().range().byteCount() == 0;
+    }
 
+    void RemoveExtraBlankLines(std::vector<DocumentSlice>& lines) {
+        for(size_t i = 0; i < lines.size(); i++) {
+            if (LineIsEmpty(lines[i])) {
+                while(i + 1 < lines.size() && LineIsEmpty(lines[i+1])) {
+                    lines.erase(lines.begin() + i + 1);
+                }
+            }
+        }
+    }
+    
+    [[nodiscard]] std::vector<DocumentSlice> BreakIntoLines(TSNode node, TraverserContext& context) {
         std::vector<DocumentSlice> lines;
 
         // find the start not including the /*
@@ -243,22 +124,184 @@ namespace {
             }
         }
 
-        lines.push_back(context.document.slice(Range::Between(start, end)));
+        std::string_view prefix = " * "sv;
+        RemovePrefix(lines, prefix);
+        RemoveExtraBlankLines(lines);
 
-        std::string_view prefix = " *"sv;
-        bool allSame = RemovePrefix(lines, prefix, " "sv);
+        return lines;
+    }
 
-        // If the lines didn't already start with a prefix, we will start them with
-        // some blank spaces to ensure alignment.
-        if (!allSame) {
-            prefix = "  "sv;
+    [[nodiscard]] bool CanReflow(const LineInfo& lineInfo) {
+        return !lineInfo.startsWithPunctuation && !lineInfo.isEmpty;
+    }
+
+    [[nodiscard]] bool LineWasOriginallyTooLong(const LineInfo& lineInfo, TraverserContext& context) {
+        return lineInfo.endColumn > context.style.targetLineLength;
+    }
+
+    [[nodiscard]] bool CanBeReflowedOnto(const LineInfo& lineInfo) {
+        // If the line starts with more than two spaces or a tab, it won't be reflowed onto
+        if (lineInfo.startsWithWhitespace) {
+            return false;
         }
 
-        // We want non first line offset to be one more than the prefix because we will add a space between the prefix and the first word
-        // on the line.
-        uint32_t firstLineOffset = start.location.column + 1;
-        uint32_t nonFirstLineOffset = uint32_t(prefix.size() + 1);
-        std::vector<std::vector<std::string_view>> reflowedLines = ReflowLines(lines, firstLineOffset, nonFirstLineOffset, context.style.targetLineLength);
+        // Empty lines won't be reflowed onto
+        if (lineInfo.isEmpty) {
+            return false;
+        }
+
+        // List items, or lines that start with multiple punctuation characters can't be reflowed onto
+        if (lineInfo.listItemInfo.has_value() || lineInfo.startsWithPunctuation) {
+            return false;
+        }
+
+        // If the line starts with any special prefixes, it won't be reflowed onto.
+        if (lineInfo.startsWithSpecialPrefix) {
+            return false;
+        }
+
+        return true;
+    }
+
+    [[nodiscard]] bool MatchesListItemIndentation(const LineInfo& lineInfo, const DocumentSlice& number) {
+        // If this line starts a line item, it doesn't match previous line items
+        if (lineInfo.listItemInfo.has_value()) {
+            return false;
+        }
+
+        uint32_t startColumn = number.startPosition().location.column;
+        uint32_t endColumn = number.endPosition().location.column + 1;
+        uint32_t firstNonWhitespaceColumn = lineInfo.initialWhitespace.end.location.column;
+
+        return firstNonWhitespaceColumn >= startColumn && firstNonWhitespaceColumn <= endColumn;
+    }
+
+    std::vector<std::vector<std::string_view>> ReflowLines(std::vector<DocumentSlice>& lines, uint32_t firstLineOffset, TraverserContext& context) {
+        TextReflower comment(firstLineOffset, context.style.targetLineLength);
+        std::optional<ListItemInfo> currentListItem;
+
+        for(const DocumentSlice& line : lines) {
+            LineInfo info(line);
+
+            // If this line starts a list item
+            if (info.listItemInfo.has_value()) {
+                currentListItem = info.listItemInfo;
+
+                // Start a new list item in the comment
+                comment.startNewListItem(info.listItemInfo.value());
+
+                Range rangeWithoutNumber = Range::Between(info.listItemInfo->number.endPosition(), line.endPosition());
+                DocumentSlice lineWithoutNumber = line.slice(rangeWithoutNumber);
+                comment.addWords(lineWithoutNumber);
+
+                continue;
+            }
+
+            if (currentListItem.has_value() && (CanBeReflowedOnto(info) || MatchesListItemIndentation(info, currentListItem->number))) {
+                comment.addWords(line);
+                continue;
+            } else if (currentListItem.has_value()) {
+                currentListItem = std::nullopt;
+                comment.endListItem();
+            }
+
+            if (info.isEmpty) {
+                comment.addEmptyLine();
+                continue;
+            }
+
+            // If we can't be reflowed onto, and the current line isn't empty, we want to start a new line
+            if (!CanBeReflowedOnto(info)) {
+                comment.startNewLineIfNotEmpty();
+            }
+
+            if (CanReflow(info)) {
+                if (info.startsWithWhitespace) {
+                    comment.addWhitespace(line.slice(info.initialWhitespace));
+                }
+                // If we can reflow this line, we want to separate it into words first
+                comment.addWords(line);
+            } else {
+                // Otherwise just add it as is
+                comment.addLineAsIs(line);
+            }
+
+            if (!LineWasOriginallyTooLong(info, context)) {
+                comment.startNewLineIfNotEmpty();
+            }
+        }
+
+        // Always end on a fresh line so the end comment token is by itself
+        comment.startNewLineIfNotEmpty();
+
+        return comment.lines;
+    }
+
+    void ReflowMultiLineComment(TSNode node, TraverserContext& context) {
+        // 1. All lines other than the first will have the prefix " * " added to it. If the last line
+        // only contains "*/" or " */", no prefix will be added to it. If all lines other than the
+        // first, and last if it only contains the end comment token, already start with " * ", no
+        // prefix will be added, and the prefix will not be considered for the following rules.
+        //
+        // 2. Empty lines can not be reflowed onto. This means if the previous line needs to reflow
+        // because it is too long, it will create a new line to reflow onto rather than fill up the
+        // empty line.
+        //
+        // 3. Lines that start with more than 2 spaces, or 1 tab, of white space will not be reflowed
+        // onto, but they may be reflowed. The start of the line is probably formatted intentionally
+        // by the author.
+        //
+        // 4. Lines that start with 2 or more punctuation characters will not be reflowed onto, nor
+        // reflowed. This line is probably formatted intentionally by the author to create a graphic,
+        // or table, or something.
+        //
+        // 5. Lines that start with one of the following strings will not be reflowed onto, as they
+        // are probably intended to be separated from previous text: "TODO", "FIXME", "BUG", "@",
+        // "* ", "- "
+        //
+        // 6. Lines that start with a number followed by a period will not be reflowed onto, but may
+        // be reflowed. These lines are probably a list.
+        //
+        // The number may be a up to 2 digits, as it is unlikely a list will be more than 99 items
+        // long in a comment, and we want to minimize miscategorizing lines that end a sentence with
+        // a number.
+        //
+        // Following lines will be considered part of the list item if they can be reflowed onto, or
+        // they are indented to between the start of the number that started the list item to one past
+        // the period. This is to catch multiline list items that have already been indented to align
+        // with the number. 
+        //
+        // The start of a list item will be indented by two spaces if it isn't already indented more,
+        // and following lines of a list item will be indented to the column one past the period that
+        // started the list item. The first word of a list item will be placed one column after the
+        // period that started the list item if it is not already.
+        //
+        // 7. Multiple empty, or white space only lines will be condensed into a single empty line.
+        //
+        // 8. If a word is on a line by itself, either authored as such, or through reflowing, and the
+        // word still goes past the line length, the line length will be ignored.
+        //
+        // 9. If a line does not go past the line length as authored, it may be reflowed if the previous
+        // line reflows onto it and pushes it past the line length, but it will create a new line to
+        // reflow onto, rather than reflowing onto the next authored line. If the author didn't use up
+        // the whole line, it was probably by design.
+        //
+        // 10. If a line is reflowed, the line will be split into "words", where a word is a string of
+        // characters separated by white space. The reflowed line will have a single space between each
+        // word.
+        //
+        // 11. If a line is not reflowed, it will remain unchanged.
+        
+        assert(IsMultiLineComment(node, context.document));
+
+        std::vector<DocumentSlice> lines = BreakIntoLines(node, context);
+        
+        // The first line starts 3 characters after the start of the comment. IE is starts after "/* " which will be
+        // the enforced start of the comment after reflow.
+        Position start = Position::StartOf(node);
+        uint32_t firstLineOffset = start.location.column + 3;
+
+        std::vector<std::vector<std::string_view>> reflowedLines = ReflowLines(lines, firstLineOffset, context);
         
         // Delete the whole comment, we will recreate it from the reflowed lines
         context.edits.emplace_back(DeleteEdit{.range = Range::Of(node)});
@@ -267,7 +310,6 @@ namespace {
         // our inserts would be applied before the delete, but then the delete would delete them :(
         
         Position insertPoint = Position::StartOf(node);
-
         auto insert = [&](const std::string_view& element) {
             context.edits.emplace_back(InsertEdit{.position = insertPoint, .bytes = element});
         };
@@ -278,22 +320,25 @@ namespace {
             }
         };
 
-        insert("*/"sv);
 
-        // If the commend ends on a line with text, we want to add a space between the text and the commend end
-        if (!reflowedLines.back().empty()) {
-            insert(" "sv);
-        }
+        // Add the end comment token
+        insert(" */"sv);
 
-        for(auto lineIndex = std::ssize(reflowedLines) - 1; lineIndex > 0; lineIndex--) {
-            insertLine(reflowedLines[lineIndex]);
-            insert(" "sv);
-            insert(prefix);
+        // If the comment is more than one line, the end comment token should be on its own line.
+        if (!reflowedLines.back().empty() && reflowedLines.size() > 1) {
             insert(context.style.newLineString());
         }
-
+        
+        // Add the contents of the comment
+        for(auto lineIndex = std::ssize(reflowedLines) - 1; lineIndex > 0; lineIndex--) {
+            insertLine(reflowedLines[lineIndex]);
+            insert(context.style.newLineString());
+        }
+        
         insertLine(reflowedLines[0]);
-        insert("/* "sv);
+
+        // Add the start comment token
+        insert("/*"sv);
     }
 }
 

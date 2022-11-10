@@ -12,9 +12,9 @@ struct Position {
 
     static Position StartOf(TSNode node);
     static Position EndOf(TSNode node);
-};
 
-bool operator!=(const Position& lhs, const Position& rhs);
-std::strong_ordering operator<=>(const Position& lhs, const Position& rhs);
+    bool operator==(const Position& other) const;
+    std::strong_ordering operator<=>(const Position& other) const;
+};
 
 }

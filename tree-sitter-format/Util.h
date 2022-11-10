@@ -23,4 +23,9 @@ namespace tree_sitter_format {
 
 [[nodiscard]] std::string_view GetSpaces(uint32_t count);
 
+
+[[nodiscard]] bool IsWhitespace(char32_t character);
+[[nodiscard]] bool IsDigit(char32_t character);
+[[nodiscard]] bool IsPunctuation(char32_t character);
+
 }
