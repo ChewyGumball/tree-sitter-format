@@ -1,13 +1,13 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <tree-sitter-format/Formatter.h>
-#include <tree-sitter-format/traversers/CommentReflowTraverser.h>
+#include <tree-sitter-format/traversers/MultilineCommentReflowTraverser.h>
 
 using namespace tree_sitter_format;
 
 std::string Reflow(const std::string& input, const Style& style) {
     Formatter formatter;
-    formatter.addTraverser(std::make_unique<CommentReflowTraverser>());
+    formatter.addTraverser(std::make_unique<MultilineCommentReflowTraverser>());
     
     Document document(input);
     formatter.format(style, document);

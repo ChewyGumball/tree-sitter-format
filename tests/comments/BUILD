@@ -4,7 +4,7 @@ tsf_cc_test(
     name = "multiline",
     srcs = ["Multiline.cpp"],
     deps = [
-        "//tree-sitter-format/traversers:comment_reflow_traverser",
+        "//tree-sitter-format/traversers:multiline_comment_reflow_traverser",
         "//tests:test_utils",
     ]
 )

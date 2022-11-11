@@ -1,4 +1,4 @@
-#include <tree-sitter-format/traversers/CommentReflowTraverser.h>
+#include <tree-sitter-format/traversers/MultilineCommentReflowTraverser.h>
 
 #include <tree-sitter-format/Constants.h>
 #include <tree-sitter-format/Util.h>
@@ -29,15 +29,6 @@ namespace {
 
         std::string_view text = document.originalContentsAt(Range::Of(node));
         return text.starts_with("/*");
-    }
-
-    [[nodiscard]] bool IsSingleLineComment(TSNode node, const Document& document) {
-        if (ts_node_symbol(node) != COMMENT) {
-            return false;
-        }
-
-        std::string_view text = document.originalContentsAt(Range::Of(node));
-        return text.starts_with("//");        
     }
     
     void RemovePrefix(std::vector<DocumentSlice>& lines, const std::string_view& prefix) {
@@ -343,10 +334,10 @@ namespace {
 }
 
 namespace tree_sitter_format {
-void CommentReflowTraverser::reset(const TraverserContext&) {}
+void MultilineCommentReflowTraverser::reset(const TraverserContext&) {}
 
-void CommentReflowTraverser::visitLeaf(TSNode, TraverserContext&) {}
-void CommentReflowTraverser::preVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
+void MultilineCommentReflowTraverser::visitLeaf(TSNode, TraverserContext&) {}
+void MultilineCommentReflowTraverser::preVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
     // We need to look at all children all at once, not in a depth first fashion. We do that when we get called
     // for the first child, and do nothing for the other children. We can't look at the child because we want
     // to be able to align consecutive single line comments together.
@@ -365,48 +356,6 @@ void CommentReflowTraverser::preVisitChild(TSNode node, uint32_t childIndex, Tra
             ReflowMultiLineComment(child, context);
         }
     }
-
-
-    std::vector<std::vector<uint32_t>> consecutiveComments;
-
-    for(uint32_t i = 0; i < childCount; i++) {
-        TSNode child = ts_node_child(node, i);
-
-        if (IsSingleLineComment(child, context.document)) {
-            std::vector<uint32_t> list;
-            list.push_back(i++);
-
-            uint32_t startColumn = ts_node_start_point(child).column;
-            uint32_t previousLine = ts_node_end_point(child).row;
-            for(; i < childCount; i++) {
-                TSNode c = ts_node_child(node, i);
-
-                uint32_t currentStartColumn = ts_node_start_point(c).column;
-                uint32_t currentLine = ts_node_end_point(c).row;
-
-                bool isSameLine = previousLine + 1 != currentLine;
-                bool isSameColumn = currentStartColumn == startColumn;
-                
-                if (!isSameLine || !isSameColumn || !IsSingleLineComment(c, context.document)) {
-                    break;
-                }
-                
-                list.push_back(i);
-            }
-
-            if (list.size() > 1) {
-                consecutiveComments.push_back(std::move(list));
-            }
-
-            // We have to backtrack one beacuse node we looked at last may still be a single line comment
-            // it just might not have started on the same column, or maybe there were blank lines between.
-            i--;
-        }
-    }
-
-    // for(const auto& list : consecutiveComments) {
-    //     ReflowComments(node, list, context);
-    // }
 }
-void CommentReflowTraverser::postVisitChild(TSNode, uint32_t, TraverserContext&) {}
+void MultilineCommentReflowTraverser::postVisitChild(TSNode, uint32_t, TraverserContext&) {}
 }

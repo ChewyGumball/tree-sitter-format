@@ -4,7 +4,7 @@
 
 namespace tree_sitter_format {
 
-class CommentReflowTraverser : public Traverser {
+class MultilineCommentReflowTraverser : public Traverser {
 protected:
     void reset(const TraverserContext& context) override;
     

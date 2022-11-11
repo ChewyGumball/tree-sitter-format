@@ -15,9 +15,9 @@ tsf_cc_library(
 )
 
 tsf_cc_library(
-    name = "comment_reflow_traverser",
-    hdrs = ["CommentReflowTraverser.h"],
-    srcs = ["CommentReflowTraverser.cpp"],
+    name = "multiline_comment_reflow_traverser",
+    hdrs = ["MultilineCommentReflowTraverser.h"],
+    srcs = ["MultilineCommentReflowTraverser.cpp"],
     deps = [
         "//tree-sitter-format:constants",
         "//tree-sitter-format/document:text_reflower",
