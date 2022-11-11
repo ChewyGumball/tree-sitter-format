@@ -4,9 +4,9 @@
 
 #include <tree_sitter/api.h>
 
-#include <tree_sitter_format/document/Edits.h>
-#include <tree_sitter_format/document/Document.h>
-#include <tree_sitter_format/style/Style.h>
+#include <tree-sitter-format/document/Edits.h>
+#include <tree-sitter-format/document/Document.h>
+#include <tree-sitter-format/style/Style.h>
 
 namespace tree_sitter_format {
 

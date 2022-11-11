@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include <tree_sitter_format/traversers/Traverser.h>
+#include <tree-sitter-format/traversers/Traverser.h>
 
 namespace tree_sitter_format {
 

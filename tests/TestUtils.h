@@ -1,7 +1,7 @@
 #pragma once
 
-#include <tree_sitter_format/Formatter.h>
-#include <tree_sitter_format/style/Style.h>
+#include <tree-sitter-format/Formatter.h>
+#include <tree-sitter-format/style/Style.h>
 
 #include <catch2/catch_test_macros.hpp>
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <tree_sitter_format/document/Position.h>
-#include <tree_sitter_format/document/Range.h>
+#include <tree-sitter-format/document/Position.h>
+#include <tree-sitter-format/document/Range.h>
 
 #include <cassert>
 #include <compare>

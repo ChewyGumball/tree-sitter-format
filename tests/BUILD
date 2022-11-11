@@ -6,7 +6,7 @@ tsf_cc_library(
     visibility = ["//visibility:public"],
     testonly = True,
     deps = [
-        "//tree-sitter-format:style",
+        "//tree-sitter-format/style",
         "//tree-sitter-format:formatter",
         "@catch2",
     ],

@@ -3,9 +3,9 @@
 #include <string_view>
 #include <vector>
 
-#include <tree_sitter_format/document/Position.h>
-#include <tree_sitter_format/document/Range.h>
-#include <tree_sitter_format/document/UnicodeIterator.h>
+#include <tree-sitter-format/document/Position.h>
+#include <tree-sitter-format/document/Range.h>
+#include <tree-sitter-format/document/UnicodeIterator.h>
 
 namespace tree_sitter_format {
 

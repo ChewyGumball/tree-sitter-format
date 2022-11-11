@@ -1,4 +1,4 @@
-#include <tree_sitter_format/document/Document.h>
+#include <tree-sitter-format/document/Document.h>
 
 #include <algorithm>
 

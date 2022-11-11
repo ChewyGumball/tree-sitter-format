@@ -1,4 +1,4 @@
-#include <tree_sitter_format/Formatter.h>
+#include <tree-sitter-format/Formatter.h>
 
 namespace tree_sitter_format {
 

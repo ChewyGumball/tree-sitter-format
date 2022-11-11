@@ -1,17 +1,17 @@
-#include <tree_sitter_format/Constants.h>
-#include <tree_sitter_format/style/Style.h>
-#include <tree_sitter_format/document/Document.h>
+#include <tree-sitter-format/Constants.h>
+#include <tree-sitter-format/style/Style.h>
+#include <tree-sitter-format/document/Document.h>
 
-#include <tree_sitter_format/traversers/BracketExistanceTraverser.h>
-#include <tree_sitter_format/traversers/IndentationTraverser.h>
-#include <tree_sitter_format/traversers/ParseTraverser.h>
-#include <tree_sitter_format/traversers/SpaceTraverser.h>
-#include <tree_sitter_format/traversers/DeclarationAlignmentTraverser.h>
-#include <tree_sitter_format/traversers/BitfieldAlignmentTraverser.h>
-#include <tree_sitter_format/traversers/AssignmentAlignmentTraverser.h>
-#include <tree_sitter_format/traversers/InitializerListAlignmentTraverser.h>
+#include <tree-sitter-format/traversers/BracketExistanceTraverser.h>
+#include <tree-sitter-format/traversers/IndentationTraverser.h>
+#include <tree-sitter-format/traversers/ParseTraverser.h>
+#include <tree-sitter-format/traversers/SpaceTraverser.h>
+#include <tree-sitter-format/traversers/DeclarationAlignmentTraverser.h>
+#include <tree-sitter-format/traversers/BitfieldAlignmentTraverser.h>
+#include <tree-sitter-format/traversers/AssignmentAlignmentTraverser.h>
+#include <tree-sitter-format/traversers/InitializerListAlignmentTraverser.h>
 
-#include <tree_sitter_format/Formatter.h>
+#include <tree-sitter-format/Formatter.h>
 
 #include <tree_sitter/api.h>
 

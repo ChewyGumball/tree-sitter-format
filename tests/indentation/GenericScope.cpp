@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <tree_sitter_format/style/Style.h>
-#include <tree_sitter_format/traversers/IndentationTraverser.h>
+#include <tree-sitter-format/style/Style.h>
+#include <tree-sitter-format/traversers/IndentationTraverser.h>
 #include <tests/TestUtils.h>
 
 using namespace tree_sitter_format;

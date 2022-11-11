@@ -1,9 +1,9 @@
-#include <tree_sitter_format/traversers/CommentReflowTraverser.h>
+#include <tree-sitter-format/traversers/CommentReflowTraverser.h>
 
-#include <tree_sitter_format/Constants.h>
-#include <tree_sitter_format/Util.h>
-#include <tree_sitter_format/document/Document.h>
-#include <tree_sitter_format/document/TextReflower.h>
+#include <tree-sitter-format/Constants.h>
+#include <tree-sitter-format/Util.h>
+#include <tree-sitter-format/document/Document.h>
+#include <tree-sitter-format/document/TextReflower.h>
 
 #include <array>
 #include <assert.h>

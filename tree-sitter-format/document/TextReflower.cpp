@@ -1,6 +1,6 @@
-#include <tree_sitter_format/document/TextReflower.h>
+#include <tree-sitter-format/document/TextReflower.h>
 
-#include <tree_sitter_format/Util.h>
+#include <tree-sitter-format/Util.h>
 
 #include <array>
 

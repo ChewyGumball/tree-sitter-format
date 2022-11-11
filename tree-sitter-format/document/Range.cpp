@@ -1,4 +1,4 @@
-#include <tree_sitter_format/document/Range.h>
+#include <tree-sitter-format/document/Range.h>
 
 namespace tree_sitter_format {
     

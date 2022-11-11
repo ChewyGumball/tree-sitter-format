@@ -1,6 +1,6 @@
 #pragma once
 
-#include <tree_sitter_format/document/DocumentSlice.h>
+#include <tree-sitter-format/document/DocumentSlice.h>
 
 #include <optional>
 #include <string_view>

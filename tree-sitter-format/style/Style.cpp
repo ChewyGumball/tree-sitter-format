@@ -1,4 +1,4 @@
-#include <tree_sitter_format/style/Style.h>
+#include <tree-sitter-format/style/Style.h>
 
 #include <yaml-cpp/yaml.h>
 

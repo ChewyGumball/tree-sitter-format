@@ -1,6 +1,6 @@
-#include <tree_sitter_format/traversers/ParseTraverser.h>
+#include <tree-sitter-format/traversers/ParseTraverser.h>
 
-#include <tree_sitter_format/Util.h>
+#include <tree-sitter-format/Util.h>
 
 #include <iostream>
 #include <format>

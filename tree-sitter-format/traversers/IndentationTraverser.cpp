@@ -1,7 +1,7 @@
-#include <tree_sitter_format/traversers/IndentationTraverser.h>
+#include <tree-sitter-format/traversers/IndentationTraverser.h>
 
-#include <tree_sitter_format/Constants.h>
-#include <tree_sitter_format/Util.h>
+#include <tree-sitter-format/Constants.h>
+#include <tree-sitter-format/Util.h>
 
 #include <cassert>
 

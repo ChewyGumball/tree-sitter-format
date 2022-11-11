@@ -1,6 +1,6 @@
-#include <tree_sitter_format/document/DocumentSlice.h>
+#include <tree-sitter-format/document/DocumentSlice.h>
 
-#include <tree_sitter_format/Util.h>
+#include <tree-sitter-format/Util.h>
 
 #include <cassert>
 #include <optional>

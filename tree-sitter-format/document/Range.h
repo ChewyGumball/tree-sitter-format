@@ -1,6 +1,6 @@
 #pragma once
 
-#include <tree_sitter_format/document/Position.h>
+#include <tree-sitter-format/document/Position.h>
 
 namespace tree_sitter_format {
 

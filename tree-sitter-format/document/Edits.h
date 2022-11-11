@@ -3,8 +3,8 @@
 #include <string_view>
 #include <variant>
 
-#include <tree_sitter_format/document/Position.h>
-#include <tree_sitter_format/document/Range.h>
+#include <tree-sitter-format/document/Position.h>
+#include <tree-sitter-format/document/Range.h>
 
 namespace tree_sitter_format {
 

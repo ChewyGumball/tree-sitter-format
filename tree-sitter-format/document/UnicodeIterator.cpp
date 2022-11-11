@@ -1,4 +1,4 @@
-#include <tree_sitter_format/document/UnicodeIterator.h>
+#include <tree-sitter-format/document/UnicodeIterator.h>
 
 namespace tree_sitter_format {
 

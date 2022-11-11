@@ -1,4 +1,4 @@
-#include <tree_sitter_format/document/Edits.h>
+#include <tree-sitter-format/document/Edits.h>
 
 namespace {
     struct EditStartVisit {
