@@ -306,7 +306,7 @@ namespace {
         // Delete the whole comment, we will recreate it from the reflowed lines
         context.edits.emplace_back(DeleteEdit{.range = Range::Of(node)});
 
-        // We have to add it back in backwards, because edits are applied from greatest to least byte offset. If we did it forward,
+        // We have to add things in backwards, because edits are applied from greatest to least byte offset. If we did it forward,
         // our inserts would be applied before the delete, but then the delete would delete them :(
         
         Position insertPoint = Position::StartOf(node);
