@@ -63,18 +63,23 @@ namespace tree_sitter_format {
     DocumentSlice DocumentSlice::trimBack() const {
         UnicodeIterator front = begin();
         UnicodeIterator back = end();
-        std::optional<Position> lastNonWhitespace = std::nullopt;
+        std::optional<Position> lastStartOfWhitespace = std::nullopt;
+        bool lastWasWhitespace = false;
 
         while(front != back) {
-            if (!IsWhitespace(*front)) {
-                lastNonWhitespace = front.currentPosition();
+            bool isWhitespace = IsWhitespace(*front);
+            if (!isWhitespace) {
+                lastStartOfWhitespace = std::nullopt;
+            } else if (!lastWasWhitespace) {
+                lastStartOfWhitespace = front.currentPosition();
             }
 
+            lastWasWhitespace = isWhitespace;
             ++front;
         }
 
         Range subRange {
-            .start = lastNonWhitespace.value_or(elementRange.end),
+            .start = lastStartOfWhitespace.value_or(elementRange.end),
             .end = elementRange.end,
         };
 
