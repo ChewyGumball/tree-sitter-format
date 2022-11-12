@@ -20,7 +20,7 @@ protected:
     Location findByteLocation(uint32_t position) const;
 
 public:
-    
+
 
     DocumentSlice(const Range& range, std::vector<std::string_view> elements);
 
@@ -30,6 +30,7 @@ public:
 
     DocumentSlice slice(const Range& subRange) const;
     DocumentSlice trimFront() const;
+    DocumentSlice trimBack() const;
 
     const std::vector<std::string_view>& contents() const { return elements;}
     std::vector<std::string_view> contentsAt(Range subRange) const;
@@ -38,6 +39,7 @@ public:
     char characterAt(uint32_t bytePosition) const;
 
     bool startsWith(std::string_view bytes) const;
+    bool is(std::string_view bytes) const;
 
     Range nextNewLine(Position start) const;
 

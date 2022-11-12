@@ -30,7 +30,7 @@ namespace tree_sitter_format {
         // We should never get here
         return Location();
     }
-    
+
     DocumentSlice::DocumentSlice(const Range& range, std::vector<std::string_view> elements)
      : elementRange(range), elements(std::move(elements)) {
         assert(!this->elements.empty());
@@ -44,7 +44,7 @@ namespace tree_sitter_format {
         return DocumentSlice(subRange, contentsAt(subRange));
     }
 
-    
+
     DocumentSlice DocumentSlice::trimFront() const {
         UnicodeIterator front = begin();
         UnicodeIterator back = end();
@@ -56,7 +56,28 @@ namespace tree_sitter_format {
             .start = front.currentPosition(),
             .end = elementRange.end,
         };
-        
+
+        return slice(subRange);
+    }
+
+    DocumentSlice DocumentSlice::trimBack() const {
+        UnicodeIterator front = begin();
+        UnicodeIterator back = end();
+        std::optional<Position> lastNonWhitespace = std::nullopt;
+
+        while(front != back) {
+            if (!IsWhitespace(*front)) {
+                lastNonWhitespace = front.currentPosition();
+            }
+
+            ++front;
+        }
+
+        Range subRange {
+            .start = lastNonWhitespace.value_or(elementRange.end),
+            .end = elementRange.end,
+        };
+
         return slice(subRange);
     }
 
@@ -122,7 +143,7 @@ namespace tree_sitter_format {
 
         return s.str();
     }
-    
+
     char DocumentSlice::characterAt(uint32_t bytePosition) const {
         Location location = findByteLocation(bytePosition);
         return elements[location.index][location.offset];
@@ -145,6 +166,10 @@ namespace tree_sitter_format {
         }
 
         return false;
+    }
+
+    bool DocumentSlice::is(std::string_view bytes) const {
+        return bytes.size() == elementRange.byteCount() && startsWith(bytes);
     }
 
     Range DocumentSlice::nextNewLine(Position start) const {
@@ -181,7 +206,7 @@ namespace tree_sitter_format {
                             .end = newLineEnd,
                         };
                     }
-                } 
+                }
 
                 char masked = character & UTF8ContinuationMask;
                 bool isContinuation = masked == UTF8ContinuationValue;
@@ -222,7 +247,7 @@ namespace tree_sitter_format {
                 byteOffset++;
             }
         }
-        
+
         Position endOfFilePosition {
             .location = TSPoint {
                 .row = start.location.row,
@@ -267,7 +292,7 @@ namespace tree_sitter_format {
                 column--;
             }
             byteOffset--;
-            
+
             if (location.offset == 0) {
                 if (location.index > 0) {
                     location.index--;
@@ -278,7 +303,7 @@ namespace tree_sitter_format {
                 }
             }
         }
-        
+
         Position start {
             .location = TSPoint {
                 .row = end.location.row,
