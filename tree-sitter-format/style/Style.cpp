@@ -61,7 +61,7 @@ namespace {
         } else {
             YAML::Mark mark = node.Mark();
             std::cerr << "Expected field '" << name << "' on line " << mark.line << " to have one of the following values:" << std::endl;
-            std::cerr << "\braces_indented, body_indented, both_indented, none" << std::endl;
+            std::cerr << "\tbraces_indented, body_indented, both_indented, none" << std::endl;
             std::cerr << "but it was: " << value << std::endl;
 
             std::exit(EXIT_FAILURE);
@@ -245,7 +245,7 @@ namespace {
         } else {
             YAML::Mark mark = node.Mark();
             std::cerr << "Expected field '" << name << "' on line " << mark.line << " to have one of the following values:" << std::endl;
-            std::cerr << "\right, left" << std::endl;
+            std::cerr << "\tright, left" << std::endl;
             std::cerr << "but it was: " << value << std::endl;
 
             std::exit(EXIT_FAILURE);
@@ -300,6 +300,37 @@ namespace {
         return value.as<std::string>();
     }
 
+    Style::TrailingCommentAlignment GetOptionalTrailingCommentAlignment(YAML::Node node, const std::string& name, Style::TrailingCommentAlignment defaultValue) {
+        YAML::Node alignment = node[name];
+
+        if (!alignment.IsDefined()) {
+            return defaultValue;
+        }
+
+        if (!alignment.IsScalar()) {
+            YAML::Mark mark = node.Mark();
+            std::cerr << "Expected field '" << name << "' on line " << mark.line << " to be a scalar value, but it wasn't!" << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+
+        std::string value = alignment.as<std::string>();
+
+        if (value == "left_justify") {
+            return Style::TrailingCommentAlignment::LeftJustify;
+        } else if (value == "align_consecutive") {
+            return Style::TrailingCommentAlignment::AlignConsecutive;
+        } else if (value == "ignore") {
+            return Style::TrailingCommentAlignment::Ignore;
+        } else {
+            YAML::Mark mark = node.Mark();
+            std::cerr << "Expected field '" << name << "' on line " << mark.line << " to have one of the following values:" << std::endl;
+            std::cerr << "\tleft_justify, align_consecutive, ignore" << std::endl;
+            std::cerr << "but it was: " << value << std::endl;
+
+            std::exit(EXIT_FAILURE);
+        }
+    }
+
     void SetIndentation(YAML::Node node, const std::string& name, Style::Indentation& indentation) {
         indentation = GetOptionalIndentation(node, name, indentation);
     }
@@ -325,7 +356,7 @@ namespace {
         } else if (assignments.IsScalar()) {
             try {
                 std::string value = assignments.as<std::string>();
-                
+
                 alignment.align = value != "None";
                 alignment.acrossEmptyLines = value == "AcrossEmptyLines" || value == "AcrossEmptyLinesAndComments";
                 alignment.acrossComments = value == "AcrossComments" || value == "AcrossEmptyLinesAndComments";
@@ -378,20 +409,23 @@ namespace {
 
     void SetJustification(YAML::Node node, const std::string& name, Style::Justify& justification) {
         justification = GetOptionalJustification(node, name, justification);
+    }
 
+    void SetTrailingCommentAlignment(YAML::Node node, const std::string& name, Style::TrailingCommentAlignment& alignment) {
+        alignment = GetOptionalTrailingCommentAlignment(node, name, alignment);
     }
 }
 
 namespace tree_sitter_format {
     std::string_view Style::indentationString() const {
-        static std::string s = CreateIndentationString(*this); 
+        static std::string s = CreateIndentationString(*this);
         return s;
     }
     std::string_view Style::newLineString() const {
-        static std::string s = CreateNewLineString(*this); 
+        static std::string s = CreateNewLineString(*this);
         return s;
     }
-    
+
     Style Style::FromClangFormat(const std::string& config) {
         Style style;
 
@@ -400,7 +434,7 @@ namespace tree_sitter_format {
         // Based on https://releases.llvm.org/15.0.0/tools/clang/docs/ClangFormatStyleOptions.html
 
         // BasedOnStyle
-        // AccessModifierOffset 
+        // AccessModifierOffset
         // AlignAfterOpenBracket
         // AlignArrayOfStructures
         std::string alignInitializers = GetOptionalString(root, "AlignArrayOfStructures", "None");
@@ -426,39 +460,46 @@ namespace tree_sitter_format {
         // AlignConsecutiveAssignments
         SetAlignmentClangFormat(root, "AlignConsecutiveAssignments", style.alignment.assignments);
 
-        // AlignConsecutiveBitFields 
+        // AlignConsecutiveBitFields
         SetAlignmentClangFormat(root, "AlignConsecutiveBitFields", style.alignment.bitFields);
 
-        // AlignConsecutiveDeclarations 
+        // AlignConsecutiveDeclarations
         SetAlignmentClangFormat(root, "AlignConsecutiveDeclarations", style.alignment.memberVariableDeclarations);
         SetAlignmentClangFormat(root, "AlignConsecutiveDeclarations", style.alignment.variableDeclarations);
 
-        // AlignConsecutiveMacros 
+        // AlignConsecutiveMacros
         SetAlignmentClangFormat(root, "AlignConsecutiveMacros", style.alignment.macros);
 
-        // AlignEscapedNewlines 
+        // AlignEscapedNewlines
         SetAlignmentClangFormat(root, "AlignEscapedNewlines", style.alignment.escapedNewlines);
 
-        // AlignOperands 
-        // AlignTrailingComments 
-        // AllowAllArgumentsOnNextLine 
-        // AllowAllConstructorInitializersOnNextLine 
-        // AllowAllParametersOfDeclarationOnNextLine 
-        // AllowShortBlocksOnASingleLine 
-        // AllowShortCaseLabelsOnASingleLine 
-        // AllowShortEnumsOnASingleLine 
-        // AllowShortFunctionsOnASingleLine 
-        // AllowShortIfStatementsOnASingleLine 
-        // AllowShortLambdasOnASingleLine 
-        // AllowShortLoopsOnASingleLine 
+        // AlignOperands
 
-        // AlwaysBreakAfterDefinitionReturnType 
+        // AlignTrailingComments
+        if (GetOptionalBoolean(root, "AlignTrailingComments", false)) {
+            style.alignment.trailingComments = TrailingCommentAlignment::AlignConsecutive;
+        } else {
+            style.alignment.trailingComments = TrailingCommentAlignment::LeftJustify;
+        }
+
+        // AllowAllArgumentsOnNextLine
+        // AllowAllConstructorInitializersOnNextLine
+        // AllowAllParametersOfDeclarationOnNextLine
+        // AllowShortBlocksOnASingleLine
+        // AllowShortCaseLabelsOnASingleLine
+        // AllowShortEnumsOnASingleLine
+        // AllowShortFunctionsOnASingleLine
+        // AllowShortIfStatementsOnASingleLine
+        // AllowShortLambdasOnASingleLine
+        // AllowShortLoopsOnASingleLine
+
+        // AlwaysBreakAfterDefinitionReturnType
         std::string definitionReturnType = GetOptionalString(root, "AlwaysBreakAfterDefinitionReturnType", "None");
         if (definitionReturnType == "All") {
             style.spacing.functionDefinitions.returnType = RequiredWhitespace::Newline;
         }
 
-        // AlwaysBreakAfterReturnType 
+        // AlwaysBreakAfterReturnType
         std::string returnType = GetOptionalString(root, "AlwaysBreakAfterReturnType ", "None");
         if (returnType == "All") {
             style.spacing.functionDeclarations.returnType = RequiredWhitespace::Newline;
@@ -467,13 +508,13 @@ namespace tree_sitter_format {
             style.spacing.functionDefinitions.returnType = RequiredWhitespace::Newline;
         }
 
-        // AlwaysBreakBeforeMultilineStrings 
-        // AlwaysBreakTemplateDeclarations 
-        // AttributeMacros 
-        // BinPackArguments 
-        // BinPackParameters 
+        // AlwaysBreakBeforeMultilineStrings
+        // AlwaysBreakTemplateDeclarations
+        // AttributeMacros
+        // BinPackArguments
+        // BinPackParameters
 
-        // BitFieldColonSpacing 
+        // BitFieldColonSpacing
         std::string bitFields = GetOptionalString(root, "BitFieldColonSpacingStyle", "Both");
         if (bitFields == "Both") {
             style.spacing.bitFields.colon.before = Style::Whitespace::Space;
@@ -493,8 +534,8 @@ namespace tree_sitter_format {
         }
 
 
-        // BreakAfterJavaFieldAnnotations 
-        // BreakBeforeBinaryOperators 
+        // BreakAfterJavaFieldAnnotations
+        // BreakBeforeBinaryOperators
 
         // BreakBeforeBraces
         std::string braceBreak = GetOptionalString(root, "BreakBeforeBraces", "Attach");
@@ -562,7 +603,7 @@ namespace tree_sitter_format {
             style.spacing.switchStatements.braces.opening.before = Whitespace::Space;
             style.spacing.caseStatements.braces.opening.before = Whitespace::Space;
             style.spacing.tryCatch.braces.opening.before = Whitespace::Space;
-            
+
             style.spacing.functionDefinitions.braces.opening.before = Whitespace::Newline;
             style.spacing.ifStatements.elseBraces.opening.before = Whitespace::Newline;
             style.spacing.tryCatch.catchBraces.opening.before = Whitespace::Newline;
@@ -654,74 +695,74 @@ namespace tree_sitter_format {
 
             style.spacing.functionDefinitions.braces.opening.before = Whitespace::Newline;
         } else if (braceBreak == "Custom") {
-            // BraceWrapping 
+            // BraceWrapping
             YAML::Node custom = GetMap(root, "BraceWrapping");
 
-            // AfterCaseLabel 
+            // AfterCaseLabel
             if (GetOptionalBoolean(custom, "AfterCaseLabel", false)) {
                 style.spacing.caseStatements.braces.opening.before = Whitespace::Newline;
             } else {
                 style.spacing.caseStatements.braces.opening.before = Whitespace::Space;
             }
 
-            // AfterClass 
+            // AfterClass
             if (GetOptionalBoolean(custom, "AfterClass", false)) {
                 style.spacing.classes.braces.opening.before = Whitespace::Newline;
             } else {
                 style.spacing.classes.braces.opening.before = Whitespace::Space;
             }
 
-            // AfterControlStatement 
+            // AfterControlStatement
 
-            // AfterEnum 
+            // AfterEnum
             if (GetOptionalBoolean(custom, "AfterEnum", false)) {
                 style.spacing.enums.braces.opening.before = Whitespace::Newline;
             } else {
                 style.spacing.enums.braces.opening.before = Whitespace::Space;
             }
 
-            // AfterFunction  
+            // AfterFunction
             if (GetOptionalBoolean(custom, "AfterFunction ", false)) {
                 style.spacing.functionDefinitions.braces.opening.before = Whitespace::Newline;
             } else {
                 style.spacing.functionDefinitions.braces.opening.before = Whitespace::Space;
             }
 
-            // AfterNamespace   
+            // AfterNamespace
             if (GetOptionalBoolean(custom, "AfterNamespace", false)) {
                 style.spacing.namespaces.braces.opening.before = Whitespace::Newline;
             } else {
                 style.spacing.namespaces.braces.opening.before = Whitespace::Space;
             }
 
-            // AfterObjCDeclaration 
+            // AfterObjCDeclaration
 
-            // AfterStruct    
+            // AfterStruct
             if (GetOptionalBoolean(custom, "AfterStruct ", false)) {
                 style.spacing.structs.braces.opening.before = Whitespace::Newline;
             } else {
                 style.spacing.structs.braces.opening.before = Whitespace::Space;
             }
 
-            // AfterUnion     
+            // AfterUnion
             if (GetOptionalBoolean(custom, "AfterUnion  ", false)) {
                 style.spacing.unions.braces.opening.before = Whitespace::Newline;
             } else {
                 style.spacing.unions.braces.opening.before = Whitespace::Space;
             }
 
-            // AfterExternBlock 
+            // AfterExternBlock
 
-            // BeforeCatch      
+            // BeforeCatch
             if (GetOptionalBoolean(custom, "BeforeCatch", false)) {
                 style.spacing.tryCatch.braces.closing.before = Whitespace::Newline;
             } else {
                 style.spacing.tryCatch.braces.closing.before = Whitespace::Space;
             }
 
-            // BeforeLambdaBody 
+            // BeforeLambdaBody
 
-            // BeforeWhile 
+            // BeforeWhile
             if (GetOptionalBoolean(custom, "BeforeWhile", false)) {
                 style.spacing.doWhileLoops.braces.closing.before = Whitespace::Newline;
             } else {
@@ -757,69 +798,69 @@ namespace tree_sitter_format {
                 style.indentation.tryCatch = Indentation::BodyIndented;
             }
 
-            // SplitEmptyFunction 
-            // SplitEmptyRecord 
-            // SplitEmptyNamespace 
+            // SplitEmptyFunction
+            // SplitEmptyRecord
+            // SplitEmptyNamespace
         } else {
             std::cerr << "Unknown value of 'BreakBeforeBraces': " << braceBreak << std::endl;
             std::exit(EXIT_FAILURE);
         }
 
-        // BreakBeforeConceptDeclarations 
-        // BreakBeforeTernaryOperators 
-        // BreakConstructorInitializers 
-        // BreakInheritanceList 
+        // BreakBeforeConceptDeclarations
+        // BreakBeforeTernaryOperators
+        // BreakConstructorInitializers
+        // BreakInheritanceList
         // BreakStringLiterals
 
-        // ColumnLimit 
+        // ColumnLimit
         style.targetLineLength = GetOptionalInt(root, "ColumnLimit", style.targetLineLength);
 
-        // CommentPragmas 
-        // CompactNamespaces 
-        // ConstructorInitializerAllOnOneLineOrOnePerLine 
-        // ConstructorInitializerIndentWidth 
-        // ContinuationIndentWidth 
-        // Cpp11BracedListStyle 
-        // DeriveLineEnding 
-        // DerivePointerAlignment 
-        // DisableFormat 
-        // EmptyLineAfterAccessModifier 
-        // EmptyLineBeforeAccessModifier 
-        // ExperimentalAutoDetectBinPacking 
-        // FixNamespaceComments 
-        // ForEachMacros 
-        // IfMacros 
-        // IncludeBlocks 
-        // IncludeCategories 
-        // IncludeIsMainRegex 
-        // IncludeIsMainSourceRegex 
-        // IndentAccessModifiers 
+        // CommentPragmas
+        // CompactNamespaces
+        // ConstructorInitializerAllOnOneLineOrOnePerLine
+        // ConstructorInitializerIndentWidth
+        // ContinuationIndentWidth
+        // Cpp11BracedListStyle
+        // DeriveLineEnding
+        // DerivePointerAlignment
+        // DisableFormat
+        // EmptyLineAfterAccessModifier
+        // EmptyLineBeforeAccessModifier
+        // ExperimentalAutoDetectBinPacking
+        // FixNamespaceComments
+        // ForEachMacros
+        // IfMacros
+        // IncludeBlocks
+        // IncludeCategories
+        // IncludeIsMainRegex
+        // IncludeIsMainSourceRegex
+        // IndentAccessModifiers
 
-        // IndentCaseBlocks 
+        // IndentCaseBlocks
         if (GetOptionalBoolean(root, "IndentCaseBlocks", false)) {
             style.indentation.caseBlocks = Indentation::BothIndented;
         } else {
             style.indentation.caseBlocks = Indentation::BodyIndented;
         }
 
-        // IndentCaseLabels 
+        // IndentCaseLabels
         if (GetOptionalBoolean(root, "IndentCaseLabels",false)) {
             style.indentation.switchStatements = Indentation::BothIndented;
         } else {
             style.indentation.switchStatements = Indentation::BodyIndented;
         }
 
-        // IndentExternBlock 
-        // IndentGotoLabels 
-        // IndentPPDirectives 
-        // IndentRequiresClause 
+        // IndentExternBlock
+        // IndentGotoLabels
+        // IndentPPDirectives
+        // IndentRequiresClause
 
-        // IndentWidth 
+        // IndentWidth
         style.indentation.indentationAmount = GetOptionalInt(root, "IndentWidth", style.indentation.indentationAmount);
 
-        // IndentWrappedFunctionNames 
+        // IndentWrappedFunctionNames
 
-        // InsertBraces 
+        // InsertBraces
         if (GetOptionalBoolean(root, "InsertBraces", false)) {
             style.braces.ifStatements = BraceExistance::Require;
             style.braces.forLoops = BraceExistance::Require;
@@ -836,37 +877,37 @@ namespace tree_sitter_format {
             style.braces.switchStatements = BraceExistance::Ignore;
         }
 
-        // InsertTrailingCommas 
-        // JavaImportGroups 
-        // JavaScriptQuotes 
-        // JavaScriptWrapImports 
-        // KeepEmptyLinesAtTheStartOfBlocks 
-        // LambdaBodyIndentation 
-        // Language 
-        // MacroBlockBegin 
-        // MacroBlockEnd 
-        // MaxEmptyLinesToKeep 
-        // NamespaceIndentation 
-        // NamespaceMacros 
-        // ObjCBinPackProtocolList 
-        // ObjCBlockIndentWidth 
-        // ObjCBreakBeforeNestedBlockParam 
-        // ObjCSpaceAfterProperty 
-        // ObjCSpaceBeforeProtocolList 
-        // PPIndentWidth 
-        // PackConstructorInitializers 
-        // PenaltyBreakAssignment 
-        // PenaltyBreakBeforeFirstCallParameter 
-        // PenaltyBreakComment 
-        // PenaltyBreakFirstLessLess 
-        // PenaltyBreakOpenParenthesis 
-        // PenaltyBreakString 
-        // PenaltyBreakTemplateDeclaration 
-        // PenaltyExcessCharacter 
-        // PenaltyIndentedWhitespace 
-        // PenaltyReturnTypeOnItsOwnLine 
+        // InsertTrailingCommas
+        // JavaImportGroups
+        // JavaScriptQuotes
+        // JavaScriptWrapImports
+        // KeepEmptyLinesAtTheStartOfBlocks
+        // LambdaBodyIndentation
+        // Language
+        // MacroBlockBegin
+        // MacroBlockEnd
+        // MaxEmptyLinesToKeep
+        // NamespaceIndentation
+        // NamespaceMacros
+        // ObjCBinPackProtocolList
+        // ObjCBlockIndentWidth
+        // ObjCBreakBeforeNestedBlockParam
+        // ObjCSpaceAfterProperty
+        // ObjCSpaceBeforeProtocolList
+        // PPIndentWidth
+        // PackConstructorInitializers
+        // PenaltyBreakAssignment
+        // PenaltyBreakBeforeFirstCallParameter
+        // PenaltyBreakComment
+        // PenaltyBreakFirstLessLess
+        // PenaltyBreakOpenParenthesis
+        // PenaltyBreakString
+        // PenaltyBreakTemplateDeclaration
+        // PenaltyExcessCharacter
+        // PenaltyIndentedWhitespace
+        // PenaltyReturnTypeOnItsOwnLine
 
-        // PointerAlignment 
+        // PointerAlignment
         std::string pointerAlignment = GetOptionalString(root, "PointerAlignment", "Left");
         if (pointerAlignment == "Left") {
             style.spacing.pointers.before = Whitespace::None;
@@ -882,11 +923,11 @@ namespace tree_sitter_format {
             std::exit(EXIT_FAILURE);
         }
 
-        // QualifierAlignment 
-        // QualifierOrder 
-        // RawStringFormats 
+        // QualifierAlignment
+        // QualifierOrder
+        // RawStringFormats
 
-        // ReferenceAlignment 
+        // ReferenceAlignment
         std::string referenceAlignment = GetOptionalString(root, "ReferenceAlignment", "Left");
         if (referenceAlignment == "Left") {
             style.spacing.references.before = Whitespace::None;
@@ -902,9 +943,9 @@ namespace tree_sitter_format {
             std::exit(EXIT_FAILURE);
         }
 
-        // ReflowComments 
+        // ReflowComments
 
-        // RemoveBracesLLVM 
+        // RemoveBracesLLVM
         if (GetOptionalBoolean(root, "RemoveBracesLLVM", false)) {
             style.braces.ifStatements = BraceExistance::Remove;
             style.braces.forLoops = BraceExistance::Remove;
@@ -912,30 +953,30 @@ namespace tree_sitter_format {
             style.braces.doWhileLoops = BraceExistance::Remove;
         }
 
-        // RequiresClausePosition 
-        // SeparateDefinitionBlocks 
-        // ShortNamespaceLines 
-        // SortIncludes 
-        // SortJavaStaticImport 
-        // SortUsingDeclarations 
-        // SpaceAfterCStyleCast 
-        // SpaceAfterLogicalNot 
-        // SpaceAfterTemplateKeyword 
-        // SpaceAroundPointerQualifiers 
-        // SpaceBeforeAssignmentOperators 
+        // RequiresClausePosition
+        // SeparateDefinitionBlocks
+        // ShortNamespaceLines
+        // SortIncludes
+        // SortJavaStaticImport
+        // SortUsingDeclarations
+        // SpaceAfterCStyleCast
+        // SpaceAfterLogicalNot
+        // SpaceAfterTemplateKeyword
+        // SpaceAroundPointerQualifiers
+        // SpaceBeforeAssignmentOperators
 
-        // SpaceBeforeCaseColon 
+        // SpaceBeforeCaseColon
         if (GetOptionalBoolean(root, "SpaceBeforeCaseColon", false)) {
             style.spacing.caseStatements.colon.before = Whitespace::Space;
         } else {
             style.spacing.caseStatements.colon.before = Whitespace::None;
         }
 
-        // SpaceBeforeCpp11BracedList 
-        // SpaceBeforeCtorInitializerColon 
-        // SpaceBeforeInheritanceColon 
+        // SpaceBeforeCpp11BracedList
+        // SpaceBeforeCtorInitializerColon
+        // SpaceBeforeInheritanceColon
 
-        // SpaceBeforeParens 
+        // SpaceBeforeParens
         std::string spaceBefore = GetOptionalString(root, "SpaceBeforeParens", "Always");
         if (spaceBefore == "Never") {
             style.spacing.functionDeclarations.parentheses.opening.before = Whitespace::None;
@@ -970,10 +1011,10 @@ namespace tree_sitter_format {
             style.spacing.ifStatements.parentheses.opening.before = Whitespace::Space;
             style.spacing.switchStatements.parentheses.opening.before = Whitespace::Space;
         } else if (spaceBefore == "Custom") {
-            // SpaceBeforeParensOptions 
+            // SpaceBeforeParensOptions
             YAML::Node custom = GetMap(root, "SpaceBeforeParensOptions");
 
-            // AfterControlStatements 
+            // AfterControlStatements
             if (GetOptionalBoolean(custom, "AfterControlStatements", false)) {
                 style.spacing.forLoops.parentheses.opening.before = Whitespace::Space;
                 style.spacing.whileLoops.parentheses.opening.before = Whitespace::Space;
@@ -982,41 +1023,41 @@ namespace tree_sitter_format {
                 style.spacing.switchStatements.parentheses.opening.before = Whitespace::Space;
             }
 
-            // AfterForeachMacros 
+            // AfterForeachMacros
 
             // AfterFunctionDeclarationName
             if (GetOptionalBoolean(custom, "AfterFunctionDeclarationName", false)) {
                 style.spacing.functionDeclarations.parentheses.opening.before = Whitespace::Space;
             }
-            
-            // AfterFunctionDefinitionName 
+
+            // AfterFunctionDefinitionName
             if (GetOptionalBoolean(custom, "AfterFunctionDefinitionName", false)) {
                 style.spacing.functionDefinitions.parentheses.opening.before = Whitespace::Space;
             }
-            
-            // AfterIfMacros 
-            // AfterOverloadedOperator 
-            // AfterRequiresInClause 
-            // AfterRequiresInExpression 
-            // BeforeNonEmptyParentheses 
+
+            // AfterIfMacros
+            // AfterOverloadedOperator
+            // AfterRequiresInClause
+            // AfterRequiresInExpression
+            // BeforeNonEmptyParentheses
         } else {
             std::cerr << "Unknown value of 'SpaceBeforeParens': " << spaceBefore << std::endl;
             std::exit(EXIT_FAILURE);
         }
 
-        // SpaceBeforeRangeBasedForLoopColon 
+        // SpaceBeforeRangeBasedForLoopColon
         if (GetOptionalBoolean(root, "SpaceBeforeRangeBasedForLoopColon", false)) {
             style.spacing.forLoops.forEachColon.before = Whitespace::Space;
         }
 
-        // SpaceBeforeSquareBrackets 
-        // SpaceInEmptyBlock 
-        // SpaceInEmptyParentheses 
-        // SpacesBeforeTrailingComments 
-        // SpacesInAngles 
-        // SpacesInCStyleCastParentheses 
+        // SpaceBeforeSquareBrackets
+        // SpaceInEmptyBlock
+        // SpaceInEmptyParentheses
+        // SpacesBeforeTrailingComments
+        // SpacesInAngles
+        // SpacesInCStyleCastParentheses
 
-        // SpacesInConditionalStatement 
+        // SpacesInConditionalStatement
         if (GetOptionalBoolean(root, "SpacesInConditionalStatement", false)) {
             style.spacing.forLoops.parentheses.opening.after = Whitespace::Space;
             style.spacing.forLoops.parentheses.closing.before = Whitespace::Space;
@@ -1041,10 +1082,10 @@ namespace tree_sitter_format {
             style.spacing.switchStatements.parentheses.closing.before = Whitespace::None;
         }
 
-        // SpacesInContainerLiterals 
-        // SpacesInLineCommentPrefix 
-        
-        // SpacesInParentheses 
+        // SpacesInContainerLiterals
+        // SpacesInLineCommentPrefix
+
+        // SpacesInParentheses
         if (GetOptionalBoolean(root, "SpacesInParentheses", false)) {
             style.spacing.functionDeclarations.parentheses.opening.after = Whitespace::Space;
             style.spacing.functionDeclarations.parentheses.closing.before = Whitespace::Space;
@@ -1065,38 +1106,38 @@ namespace tree_sitter_format {
             style.spacing.parentheses.closing.before = Whitespace::None;
         }
 
-        // SpacesInSquareBrackets 
-        // Standard 
-        // StatementAttributeLikeMacros 
-        // StatementMacros 
+        // SpacesInSquareBrackets
+        // Standard
+        // StatementAttributeLikeMacros
+        // StatementMacros
 
-        // TabWidth 
+        // TabWidth
         style.indentation.tabWidth = GetOptionalInt(root, "TabWidth", style.indentation.tabWidth);
 
-        // TypenameMacros 
+        // TypenameMacros
 
-        // UseCRLF         
+        // UseCRLF
         if (GetOptionalBoolean(root, "UseCLRF", false)) {
             style.spacing.newLineType = NewLineType::CRLF;
         } else {
             style.spacing.newLineType = NewLineType::CR;
         }
 
-        // UseTab 
+        // UseTab
         if (GetOptionalBoolean(root, "UseTab", false)) {
             style.indentation.whitespace = IndentationWhitespace::Tabs;
         } else {
             style.indentation.whitespace = IndentationWhitespace::Spaces;
         }
 
-        // WhitespaceSensitiveMacros 
+        // WhitespaceSensitiveMacros
 
         return style;
     }
 
     Style Style::FromTreeSitterFormat(const std::string& config) {
         Style style;
-        
+
         YAML::Node root = YAML::Load(config);
 
         //
@@ -1233,6 +1274,7 @@ namespace tree_sitter_format {
         SetAlignment(alignment, "macros", style.alignment.macros);
         SetAlignment(alignment, "escaped_new_lines", style.alignment.escapedNewlines);
         SetAlignment(alignment, "initializer_lists", style.alignment.initializerLists.alignment);
+        SetTrailingCommentAlignment(alignment, "trailing_comments", style.alignment.trailingComments);
 
         YAML::Node initializerList = GetMap(alignment, "initializer_lists");
         SetBool(initializerList, "align_commas_separately", style.alignment.initializerLists.alignCommasSeparately);

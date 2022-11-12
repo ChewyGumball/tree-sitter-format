@@ -94,7 +94,7 @@ struct Style {
                 .after = Whitespace::None,
             };
         } classes;
-        
+
         struct {
             PairedWhitespace braces {
                 .opening = WhitespacePlacement {
@@ -112,7 +112,7 @@ struct Style {
                 .after = Whitespace::None,
             };
         } structs;
-        
+
         struct {
             PairedWhitespace braces {
                 .opening = WhitespacePlacement {
@@ -196,7 +196,7 @@ struct Style {
                     .after = Whitespace::Newline,
                 },
             };
-            
+
             RequiredWhitespace returnType;
             WhitespacePlacement trailingReturnTypeArrow;
         } functionDefinitions;
@@ -258,7 +258,7 @@ struct Style {
             };
         } forLoops;
 
-        struct {            
+        struct {
             PairedWhitespace parentheses {
                 .opening = WhitespacePlacement {
                     .before = Whitespace::Space,
@@ -292,7 +292,7 @@ struct Style {
             };
         } whileLoops;
 
-        struct {            
+        struct {
             PairedWhitespace parentheses {
                 .opening = WhitespacePlacement {
                     .before = Whitespace::Space,
@@ -326,7 +326,7 @@ struct Style {
             };
         } doWhileLoops;
 
-        struct {            
+        struct {
             PairedWhitespace parentheses {
                 .opening = WhitespacePlacement {
                     .before = Whitespace::Space,
@@ -495,7 +495,7 @@ struct Style {
                 };
              } body;
         } lambdas;
-    
+
         PairedWhitespace parentheses {
             .opening = WhitespacePlacement {
                 .before = Whitespace::Space,
@@ -526,7 +526,7 @@ struct Style {
         bool respace = true;
         bool trimTrailing = true;
     } spacing;
-    
+
     struct Alignment {
         bool align;
         bool acrossComments;
@@ -534,6 +534,7 @@ struct Style {
     };
 
     enum class Justify { Left, Right };
+    enum class TrailingCommentAlignment { LeftJustify, AlignConsecutive, Ignore };
 
     struct {
         struct {
@@ -546,8 +547,8 @@ struct Style {
             bool alignCommasSeparately = false;
 
             Justify justification = Justify::Left;
-        }  initializerLists;
-        
+        } initializerLists;
+
         Alignment variableDeclarations {
             .align = true,
             .acrossComments = false,
@@ -578,6 +579,8 @@ struct Style {
             .acrossComments = true,
             .acrossEmptyLines = false,
         };
+
+        TrailingCommentAlignment trailingComments = TrailingCommentAlignment::AlignConsecutive;
     } alignment;
 
     std::string_view newLineString() const;
