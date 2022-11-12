@@ -7,7 +7,7 @@ const TSLanguage* tree_sitter_cpp(void);
 }
 
 namespace tree_sitter_format {
-    
+
 inline const TSSymbol IF_STATEMENT = ts_language_symbol_for_name(tree_sitter_cpp(), "if_statement", 12, true);;
 inline const TSSymbol FOR_LOOP = ts_language_symbol_for_name(tree_sitter_cpp(), "for_statement", 13, true);
 inline const TSSymbol FOR_RANGE_LOOP = ts_language_symbol_for_name(tree_sitter_cpp(), "for_range_loop", 14, true);
