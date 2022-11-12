@@ -5,7 +5,7 @@ namespace tree_sitter_format {
     bool Location::operator==(const Location& other) const {
         return index == other.index && offset == other.offset;
     }
-    
+
     std::weak_ordering Location::operator<=>(const Location& other) const {
         if (index == other.index) {
             return offset <=> other.offset;
@@ -74,10 +74,10 @@ namespace tree_sitter_format {
         (*this)++;
     }
 
-    UnicodeIterator::UnicodeIterator(const std::vector<std::string_view>& elements, const Location& start, const Location& end) 
-        : elements(elements), current(start), next(start), end(std::move(end)), currentValue(0) { 
+    UnicodeIterator::UnicodeIterator(const std::vector<std::string_view>& elements, const Location& start, const Location& end)
+        : elements(elements), current(start), next(start), end(std::move(end)), currentValue(0) {
         assert(!elements.empty());
-        
+
         (*this)++;
     }
 
@@ -135,7 +135,7 @@ namespace tree_sitter_format {
                     }
 
                     next.position.byteOffset += byteCount;
-                    
+
                     currentValue = newValue;
                     return *this;
                 }
@@ -159,7 +159,7 @@ namespace tree_sitter_format {
     std::strong_ordering UnicodeIterator::operator<=>(const UnicodeIterator& other) const {
         // Both iterators should be pointing at the same elements
         assert(&elements == &other.elements);
-        
+
         if (current.index < other.current.index) {
             return std::strong_ordering::less;
         }
@@ -178,7 +178,7 @@ namespace tree_sitter_format {
 
         return std::strong_ordering::equal;
     }
-    
+
     std::vector<std::string_view> UnicodeIterator::ElementsBetween(const UnicodeIterator& start, const UnicodeIterator& end) {
         // Make sure the end doesn't come before the start
         assert(start <= end);
@@ -203,7 +203,7 @@ namespace tree_sitter_format {
                 elements.push_back(element);
             }
         }
-        
+
         return elements;
     }
 }
