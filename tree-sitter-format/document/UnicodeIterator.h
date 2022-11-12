@@ -22,16 +22,10 @@ namespace tree_sitter_format {
         std::weak_ordering operator<=>(const Location& other) const;
     };
 
-    class UnicodeIterator : public std::iterator<std::forward_iterator_tag,
-                                                 char32_t,
-                                                 size_t,
-                                                 const char32_t *,
-                                                 char32_t
-                                                >
-    {
+    class UnicodeIterator {
     private:
         const std::vector<std::string_view>& elements;
-        
+
         Location current;
         Location next;
         Location end;
