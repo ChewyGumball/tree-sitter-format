@@ -334,28 +334,9 @@ namespace {
 }
 
 namespace tree_sitter_format {
-void MultilineCommentReflowTraverser::reset(const TraverserContext&) {}
-
-void MultilineCommentReflowTraverser::visitLeaf(TSNode, TraverserContext&) {}
-void MultilineCommentReflowTraverser::preVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
-    // We need to look at all children all at once, not in a depth first fashion. We do that when we get called
-    // for the first child, and do nothing for the other children. We can't look at the child because we want
-    // to be able to align consecutive single line comments together.
-    if (childIndex != 0) {
-        return;
-    }
-
-    if (!context.style.comments.reflow) {
-        return;
-    }
-
-    uint32_t childCount = ts_node_child_count(node);
-    for(uint32_t i = 0; i < childCount; i++) {
-        TSNode child = ts_node_child(node, i);
-        if (IsMultiLineComment(child, context.document)) {
-            ReflowMultiLineComment(child, context);
-        }
+void MultilineCommentReflowTraverser::visitLeaf(TSNode node, TraverserContext& context) {
+    if (IsMultiLineComment(node, context.document)) {
+        ReflowMultiLineComment(node, context);
     }
 }
-void MultilineCommentReflowTraverser::postVisitChild(TSNode, uint32_t, TraverserContext&) {}
 }

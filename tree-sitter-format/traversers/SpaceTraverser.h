@@ -12,6 +12,5 @@ protected:
 
     void visitLeaf(TSNode node, TraverserContext& context) override;
     void preVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) override;
-    void postVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) override;
 };
 }

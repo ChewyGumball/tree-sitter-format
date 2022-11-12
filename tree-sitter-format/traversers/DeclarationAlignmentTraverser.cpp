@@ -125,10 +125,6 @@ namespace {
 }
 
 namespace tree_sitter_format {
-void DeclarationAlignmentTraverser::reset(const TraverserContext&) {}
-
-void DeclarationAlignmentTraverser::visitLeaf(TSNode, TraverserContext&) {}
-void DeclarationAlignmentTraverser::preVisitChild(TSNode, uint32_t, TraverserContext&) {}
 void DeclarationAlignmentTraverser::postVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
     // We need to look at all children all at once, not in a depth first fashion. We do that when we get called
     // for the first child, and do nothing for the other children. We can't look at the child because that would

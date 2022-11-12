@@ -158,8 +158,6 @@ void SwitchStatementEdits(TSNode node, uint32_t childIndex, TraverserContext& co
 }
 
 namespace tree_sitter_format {
-void BracketExistanceTraverser::reset([[maybe_unused]]const TraverserContext& context) { }
-void BracketExistanceTraverser::visitLeaf([[maybe_unused]] TSNode node, [[maybe_unused]]TraverserContext& context) { }
 
 void BracketExistanceTraverser::preVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
     TSSymbol symbol = ts_node_symbol(node);
@@ -180,5 +178,4 @@ void BracketExistanceTraverser::preVisitChild(TSNode node, uint32_t childIndex, 
         CaseStatementEdits(node, childIndex, context);
     }
 }
-void BracketExistanceTraverser::postVisitChild([[maybe_unused]] TSNode node, [[maybe_unused]] uint32_t childIndex, [[maybe_unused]]TraverserContext& context) { }
 }

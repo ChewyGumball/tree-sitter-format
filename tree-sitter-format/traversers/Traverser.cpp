@@ -8,6 +8,12 @@ namespace {
 
 namespace tree_sitter_format {
 
+void Traverser::reset(const TraverserContext&) { };
+
+void Traverser::visitLeaf(TSNode, TraverserContext&) { };
+void Traverser::preVisitChild(TSNode, uint32_t, TraverserContext&) { };
+void Traverser::postVisitChild(TSNode, uint32_t, TraverserContext&) { };
+
 std::vector<Edit> Traverser::traverse(const Document& document, const Style& style) {
     TraverserContext context {
         .document = document,

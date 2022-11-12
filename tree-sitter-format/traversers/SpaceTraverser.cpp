@@ -202,10 +202,4 @@ void SpaceTraverser::preVisitChild(TSNode node, uint32_t childIndex, TraverserCo
     }
 }
 
-void SpaceTraverser::postVisitChild(
-    [[maybe_unused]]TSNode node,
-    [[maybe_unused]]uint32_t childIndex,
-    [[maybe_unused]]TraverserContext& context) {
-}
-
 }

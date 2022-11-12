@@ -96,10 +96,6 @@ namespace {
 }
 
 namespace tree_sitter_format {
-void BitfieldAlignmentTraverser::reset(const TraverserContext&) {}
-
-void BitfieldAlignmentTraverser::visitLeaf(TSNode, TraverserContext&) {}
-void BitfieldAlignmentTraverser::preVisitChild(TSNode, uint32_t, TraverserContext&) {}
 void BitfieldAlignmentTraverser::postVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
     if (!context.style.alignment.bitFields.align) {
         return;

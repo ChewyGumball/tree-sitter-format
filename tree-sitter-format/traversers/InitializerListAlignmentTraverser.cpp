@@ -171,9 +171,6 @@ namespace {
 }
 
 namespace tree_sitter_format {
-void InitializerListAlignmentTraverser::reset(const TraverserContext&) {}
-
-void InitializerListAlignmentTraverser::visitLeaf(TSNode, TraverserContext&) {}
 void InitializerListAlignmentTraverser::preVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
     const auto& style = context.style.alignment.initializerLists;
     if (!style.alignment.align) {
@@ -185,5 +182,4 @@ void InitializerListAlignmentTraverser::preVisitChild(TSNode node, uint32_t chil
         CheckList(child, style.alignment, style.alignCommasSeparately, style.justification, context);
     }
 }
-void InitializerListAlignmentTraverser::postVisitChild(TSNode, uint32_t, TraverserContext&) {}
 }

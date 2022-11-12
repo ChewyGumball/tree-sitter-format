@@ -19,11 +19,11 @@ struct TraverserContext {
 
 class Traverser {
 protected:
-    virtual void reset(const TraverserContext& context) = 0;
+    virtual void reset(const TraverserContext& context);
 
-    virtual void visitLeaf(TSNode node, TraverserContext& context) = 0;
-    virtual void preVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) = 0;
-    virtual void postVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) = 0;
+    virtual void visitLeaf(TSNode node, TraverserContext& context);
+    virtual void preVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context);
+    virtual void postVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context);
 
 public:
     virtual ~Traverser() = default;

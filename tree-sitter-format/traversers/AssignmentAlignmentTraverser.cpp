@@ -130,10 +130,6 @@ namespace {
 }
 
 namespace tree_sitter_format {
-void AssignmentAlignmentTraverser::reset(const TraverserContext&) {}
-
-void AssignmentAlignmentTraverser::visitLeaf(TSNode, TraverserContext&) {}
-void AssignmentAlignmentTraverser::preVisitChild(TSNode, uint32_t, TraverserContext&) {}
 void AssignmentAlignmentTraverser::postVisitChild(TSNode node, uint32_t childIndex, TraverserContext& context) {
     if (!context.style.alignment.assignments.align) {
         return;
