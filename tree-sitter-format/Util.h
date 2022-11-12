@@ -11,6 +11,7 @@ namespace tree_sitter_format {
 [[nodiscard]] std::string_view ChildFieldName(TSNode node, uint32_t childIndex);
 [[nodiscard]] TSNode FindFirstNonExtraChild(TSNode node, uint32_t startingIndex);
 [[nodiscard]] TSNode FindLastNonExtraChild(TSNode node, uint32_t startingIndex);
+[[nodiscard]] TSNode FindPreviousNode(TSNode node);
 
 [[nodiscard]] bool IsCompoundStatementLike(TSNode node);
 [[nodiscard]] bool IsCaseWithSingleStatementBody(TSNode node);

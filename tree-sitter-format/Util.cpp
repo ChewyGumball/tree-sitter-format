@@ -27,7 +27,7 @@ std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
     //
     // IE: for(auto i : c) // help
     //          i++;
-    // 
+    //
     //      labels the "//help" comment node as the body, and will crash
     //      when querying the field name of the "i++;" child.
     //
@@ -81,6 +81,16 @@ std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
     }
 
     return NullNode();
+}
+
+[[nodiscard]] TSNode FindPreviousNode(TSNode node) {
+    TSNode previous = ts_node_prev_sibling(node);
+    while (ts_node_is_null(previous)) {
+        TSNode parent = ts_node_parent(node);
+        previous = ts_node_prev_sibling(parent);
+    }
+
+    return previous;
 }
 
 [[nodiscard]] bool IsCompoundStatementLike(TSNode node) {
@@ -141,7 +151,7 @@ std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
     if (ts_node_symbol(node) != FIELD_DECLARATION) {
         return false;
     }
-    
+
     uint32_t childCount = ts_node_child_count(node);
     for(uint32_t i = 0; i < childCount; i++) {
         TSNode child = ts_node_child(node, i);

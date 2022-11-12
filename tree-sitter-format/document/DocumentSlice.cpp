@@ -312,7 +312,7 @@ namespace tree_sitter_format {
         Position start {
             .location = TSPoint {
                 .row = end.location.row,
-                .column = column,
+                .column = 0,
             },
             .byteOffset = byteOffset,
         };
