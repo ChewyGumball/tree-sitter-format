@@ -10,14 +10,21 @@ using namespace std::literals::string_view_literals;
 namespace {
 
 using namespace tree_sitter_format;
-    
+
 void HandleCompoundChild(TSNode node, uint32_t childIndex, TraverserContext& context, Style::BraceExistance style) {
     TSNode child = ts_node_child(node, childIndex);
+
+    // Don't change anything if the braces are within an unformatted range. Since the braces are (or would be)
+    // the first and last children of 'child', we can use its bounds to check for an unformattable range.
+    if (context.document.isWithinAnUnformattableRange(Range::Of(child))) {
+        return;
+    }
+
     TSSymbol symbol = ts_node_symbol(child);
     if (symbol == COMPOUND_STATEMENT) {
         uint32_t compoundChildCount = ts_node_child_count(child);
         // Delete the open and close braces if there is only one statement and the style says to remove braces
-        // if there is only one statement            
+        // if there is only one statement
         if (compoundChildCount == 3 && style == Style::BraceExistance::Remove) {
             TSNode startBrace = ts_node_child(child, 0);
             context.edits.push_back(DeleteEdit {.range = Range::Of(startBrace)});
@@ -41,7 +48,7 @@ void IfStatementEdits(TSNode node, uint32_t childIndex, TraverserContext& contex
 
     // There is a special case for if statement alternatives (aka, the "else" part). If
     // the alternative is a single statement, and that statement is an "if" statement,
-    // don't increase the scope because it is an "else if". The grammar considers the 
+    // don't increase the scope because it is an "else if". The grammar considers the
     // "if" part of an "else if" to be a child node, but we don't want to add braces
     // around the if
     //
@@ -111,14 +118,14 @@ void ForRangeLoopEdits(TSNode node, uint32_t childIndex, TraverserContext& conte
 }
 
 void CaseStatementEdits(TSNode node, uint32_t childIndex, TraverserContext& context) {
-    // Case statements are defined as: ('case' {expression} | 'default) ':' {stuff}+ 
+    // Case statements are defined as: ('case' {expression} | 'default) ':' {stuff}+
     // so we need to find where the ':' is, and everything after that is what would be the
     // target of our brace work.
     const Style::BraceExistance& style = context.style.braces.caseStatements;
 
     std::string_view secondChildFieldName = ChildFieldName(node, 1);
     bool isDefaultCase = secondChildFieldName != "value";
-    
+
     uint32_t firstBodyStatement = isDefaultCase ? 2 : 3;
     uint32_t lastChildIndex = ts_node_child_count(node) - 1;
 
@@ -136,6 +143,15 @@ void CaseStatementEdits(TSNode node, uint32_t childIndex, TraverserContext& cont
         // and therefore the braces don't exist.
         if (style == Style::BraceExistance::Require) {
             TSNode child = ts_node_child(node, childIndex);
+
+            // Don't change anything if the braces would be within an unformatted range. We have to check here
+            // rather than right before the edit because we don't want to add any braces if either brace would
+            // be with an unformatted range.
+            Position changeStart = Position::StartOf(ts_node_child(node, firstBodyStatement));
+            Position changeEnd = Position::EndOf(ts_node_child(node, lastChildIndex));
+            if (context.document.isWithinAnUnformattableRange(Range::Between(changeStart, changeEnd))) {
+                return;
+            }
 
             if (childIndex == firstBodyStatement) {
                 context.edits.push_back(InsertEdit{.position = Position::StartOf(child), .bytes = "{"sv});

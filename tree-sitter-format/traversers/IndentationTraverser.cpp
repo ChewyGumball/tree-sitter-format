@@ -12,7 +12,7 @@ namespace {
 using namespace tree_sitter_format;
 
 enum class ScopeChange { None, IncreaseBefore, DecreaseAfter, Both };
-    
+
 template<size_t COUNT>
 [[nodiscard]] ScopeChange NonCompoundBodyScopeChange(TSNode node, uint32_t childIndex, const std::string_view (&allowedFieldNames)[COUNT], Style::Indentation allowedIndentation) {
     std::string_view fieldName = ChildFieldName(node, childIndex);
@@ -26,7 +26,7 @@ template<size_t COUNT>
             if (IsCompoundStatementLike(child)) {
                 return ScopeChange::None;
             }
-            
+
             if (allowedIndentation != Style::Indentation::None) {
                 // Since this isn't a compound statement, its a single statement body
                 // so we increase before, and decrease after
@@ -43,7 +43,7 @@ template<size_t COUNT>
 
     // There is a special case for if statement alternatives (aka, the "else" part). If
     // the alternative is a single statement, and that statement is an "if" statement,
-    // don't increase the scope because it is an "else if". The grammar considers the 
+    // don't increase the scope because it is an "else if". The grammar considers the
     // "if" part of an "else if" to be a child node, but we don't want to change the
     // scope as if it were a child because that would indent it.
     //
@@ -141,7 +141,7 @@ template<size_t COUNT>
     if (childCount == 2) {
         return ScopeChange::None;
     }
-    TSNode parent = ts_node_parent(node); 
+    TSNode parent = ts_node_parent(node);
     TSSymbol parentSymbol = ts_node_symbol(parent);
     Style::Indentation indentation = Style::Indentation::None;
     if (parentSymbol == IF_STATEMENT) {
@@ -185,10 +185,10 @@ template<size_t COUNT>
             case Style::Indentation::BodyIndented:
             case Style::Indentation::None:
             default:
-                return ScopeChange::None;        
+                return ScopeChange::None;
         }
-    } 
-    
+    }
+
     // We are the first statement after the opening brace
     if (childIndex == 1) {
         switch(indentation) {
@@ -196,15 +196,15 @@ template<size_t COUNT>
             case Style::Indentation::BothIndented:
             // If this is the only non brace child, we increment before, and decrement after
             // otherwise, we increment before, and the decrement will happen for the child
-            // that comes before the end brace 
+            // that comes before the end brace
                 return childCount == 3 ? ScopeChange::Both : ScopeChange::IncreaseBefore;
             case Style::Indentation::BracesIndented:
             case Style::Indentation::None:
             default:
-                return ScopeChange::None;        
+                return ScopeChange::None;
         }
-    } 
-    
+    }
+
     // We are the last statement before the closing brace
     if (childIndex == childCount - 2) {
         switch(indentation) {
@@ -217,10 +217,10 @@ template<size_t COUNT>
             case Style::Indentation::BracesIndented:
             case Style::Indentation::None:
             default:
-                return ScopeChange::None;        
+                return ScopeChange::None;
         }
-    } 
-    
+    }
+
     // We are the closing brace
     if (childIndex == childCount - 1) {
         switch(indentation) {
@@ -230,7 +230,7 @@ template<size_t COUNT>
             case Style::Indentation::BodyIndented:
             case Style::Indentation::None:
             default:
-                return ScopeChange::None;        
+                return ScopeChange::None;
         }
     }
 
@@ -238,7 +238,7 @@ template<size_t COUNT>
     // indentation here
     return ScopeChange::None;
 }
-    
+
 ScopeChange ScopeChangeForChild(TSNode node, uint32_t childIndex, const Style& style) {
     TSSymbol symbol = ts_node_symbol(node);
 
@@ -281,8 +281,9 @@ void IndentationTraverser::visitLeaf(TSNode node, TraverserContext& context) {
     uint32_t previousRow = previousPosition.location.row;
     uint32_t currentRow = position.location.row;
 
-    // We only want to modify things if this is the first node on a line
-    if (previousRow != currentRow) {
+    // We only want to modify things if this is the first node on a line, and only if it doesn't
+    // start within an unformattable range.
+    if (previousRow != currentRow && !context.document.isWithinAnUnformattableRange(position)) {
         Range preceedingWhitespace = context.document.toPreviousNewLine(position);
 
         // Delete the previous white space

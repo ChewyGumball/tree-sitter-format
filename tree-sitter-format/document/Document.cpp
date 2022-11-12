@@ -42,7 +42,7 @@ namespace {
             DocumentSlice comment = r.document.slice(Range::Of(node)).trimBack();
 
             if (r.currentStartNode.has_value()) {
-                if (comment.is("// clang-format: on"sv) || comment.is("// tree-sitter-format: on"sv)) {
+                if (comment.is("// clang-format on"sv) || comment.is("// tree-sitter-format on"sv)) {
                     Position start = Position::StartOf(r.currentStartNode.value());
                     Position end = Position::EndOf(node);
                     r.ranges.push_back(Range::Between(start, end));
@@ -50,7 +50,7 @@ namespace {
                     r.currentStartNode = std::nullopt;
                 }
             } else {
-                if (comment.is("// clang-format: off"sv) || comment.is("// tree-sitter-format: off"sv)) {
+                if (comment.is("// clang-format off"sv) || comment.is("// tree-sitter-format off"sv)) {
                     r.currentStartNode = node;
                 }
             }

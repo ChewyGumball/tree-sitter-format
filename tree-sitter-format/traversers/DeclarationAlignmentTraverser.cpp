@@ -11,7 +11,7 @@ namespace {
 
     void AlignNodes(const std::vector<TSNode>& nodes, TraverserContext& context) {
         uint32_t maxColumn = 0;
-        
+
         for(TSNode node : nodes) {
             maxColumn = std::max(maxColumn, ts_node_start_point(node).column);
         }
@@ -85,6 +85,11 @@ namespace {
         for(uint32_t i = 0; i < childCount; i++) {
             TSNode child = ts_node_child(node, i);
 
+            // If this declaration is unformattable, skip it
+            if (context.document.isWithinAnUnformattableRange(Range::Of(child))) {
+                continue;
+            }
+
             if (IsDeclarationLike(child)) {
                 std::vector<uint32_t> list;
                 list.push_back(i++);
@@ -92,11 +97,18 @@ namespace {
                 uint32_t previousLine = ts_node_end_point(child).row;
                 for(; i < childCount; i++) {
                     TSNode c = ts_node_child(node, i);
+
+                    // If this declaration is unformattable, break the chain of aligned declarations.
+                    // It will be skipped in the next iteration of the outer loop.
+                    if (context.document.isWithinAnUnformattableRange(Range::Of(c))) {
+                        break;
+                    }
+
                     uint32_t currentLine = ts_node_end_point(c).row;
 
                     bool isSameLine = previousLine + 1 != currentLine;
                     previousLine = currentLine;
-                    
+
                     if (style.acrossComments && ts_node_is_extra(c)) {
                         continue;
                     }

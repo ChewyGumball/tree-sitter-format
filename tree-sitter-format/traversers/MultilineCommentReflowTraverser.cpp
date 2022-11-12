@@ -14,7 +14,7 @@
 #include <vector>
 
 // At some point, look at https://github.com/CLD2Owners/cld2 to detect locale
-// then use https://unicode-org.github.io/icu/userguide/boundaryanalysis/ to 
+// then use https://unicode-org.github.io/icu/userguide/boundaryanalysis/ to
 // do word and line break detection not based on spaces and CL/LF characters.
 
 using namespace std::literals::string_view_literals;
@@ -30,7 +30,7 @@ namespace {
         std::string_view text = document.originalContentsAt(Range::Of(node));
         return text.starts_with("/*");
     }
-    
+
     void RemovePrefix(std::vector<DocumentSlice>& lines, const std::string_view& prefix) {
         bool allSame = lines.size() > 1;
         size_t lastLineToCheck = lines.size();
@@ -65,7 +65,7 @@ namespace {
                 Position newStart = lines[i].startPosition();
                 newStart.location.column += prefixIterator.currentPosition().location.column;
                 newStart.byteOffset += prefixIterator.currentPosition().byteOffset;
-                
+
                 Range trimmedRange {
                     .start = newStart,
                     .end = lines[i].endPosition(),
@@ -89,7 +89,7 @@ namespace {
             }
         }
     }
-    
+
     [[nodiscard]] std::vector<DocumentSlice> BreakIntoLines(TSNode node, TraverserContext& context) {
         std::vector<DocumentSlice> lines;
 
@@ -260,7 +260,7 @@ namespace {
         // Following lines will be considered part of the list item if they can be reflowed onto, or
         // they are indented to between the start of the number that started the list item to one past
         // the period. This is to catch multiline list items that have already been indented to align
-        // with the number. 
+        // with the number.
         //
         // The start of a list item will be indented by two spaces if it isn't already indented more,
         // and following lines of a list item will be indented to the column one past the period that
@@ -282,24 +282,24 @@ namespace {
         // word.
         //
         // 11. If a line is not reflowed, it will remain unchanged.
-        
+
         assert(IsMultiLineComment(node, context.document));
 
         std::vector<DocumentSlice> lines = BreakIntoLines(node, context);
-        
+
         // The first line starts 3 characters after the start of the comment. IE is starts after "/* " which will be
         // the enforced start of the comment after reflow.
         Position start = Position::StartOf(node);
         uint32_t firstLineOffset = start.location.column + 3;
 
         std::vector<std::vector<std::string_view>> reflowedLines = ReflowLines(lines, firstLineOffset, context);
-        
+
         // Delete the whole comment, we will recreate it from the reflowed lines
         context.edits.emplace_back(DeleteEdit{.range = Range::Of(node)});
 
         // We have to add things in backwards, because edits are applied from greatest to least byte offset. If we did it forward,
         // our inserts would be applied before the delete, but then the delete would delete them :(
-        
+
         Position insertPoint = Position::StartOf(node);
         auto insert = [&](const std::string_view& element) {
             context.edits.emplace_back(InsertEdit{.position = insertPoint, .bytes = element});
@@ -319,13 +319,13 @@ namespace {
         if (!reflowedLines.back().empty() && reflowedLines.size() > 1) {
             insert(context.style.newLineString());
         }
-        
+
         // Add the contents of the comment
         for(auto lineIndex = std::ssize(reflowedLines) - 1; lineIndex > 0; lineIndex--) {
             insertLine(reflowedLines[lineIndex]);
             insert(context.style.newLineString());
         }
-        
+
         insertLine(reflowedLines[0]);
 
         // Add the start comment token
@@ -335,7 +335,7 @@ namespace {
 
 namespace tree_sitter_format {
 void MultilineCommentReflowTraverser::visitLeaf(TSNode node, TraverserContext& context) {
-    if (IsMultiLineComment(node, context.document)) {
+    if (IsMultiLineComment(node, context.document) && !context.document.overlapsUnformattableRange(Range::Of(node))) {
         ReflowMultiLineComment(node, context);
     }
 }

@@ -18,6 +18,11 @@ namespace {
         const Position lhs = Position::EndOf(currentNode);
         const Position rhs = Position::StartOf(nextNode);
 
+        // If the edit would be within an unformattable range, skip it
+        if (context.document.overlapsUnformattableRange(Range::Between(lhs, rhs))) {
+            return;
+        }
+
         const bool onSameLine = lhs.location.row == rhs.location.row;
 
         if (onSameLine) {
@@ -25,7 +30,7 @@ namespace {
             if (style == Style::Whitespace::Newline) {
                 context.edits.push_back(InsertEdit{.position = lhs, .bytes = context.style.newLineString()});
             } else if (style == Style::Whitespace::Space) {
-                context.edits.push_back(InsertEdit {.position = rhs, .bytes = " "sv});            
+                context.edits.push_back(InsertEdit {.position = rhs, .bytes = " "sv});
             }
         } else if (style != Style::Whitespace::Newline) {
             context.edits.push_back(DeleteEdit{.range = Range::Between(lhs, rhs)});
@@ -74,7 +79,7 @@ namespace {
             if (childSymbol == DECLARATION) {
                 uint32_t childChildCount = ts_node_child_count(child);
 
-                // If there are more than 2 children, its comma separated, so 
+                // If there are more than 2 children, its comma separated, so
                 // handle commas in declaration. Each non comma is supposed to
                 // be labeled as "declarator", but there seems to be a bug, and
                 // some commas are labeled that instead... so don't use labels...
@@ -85,7 +90,7 @@ namespace {
 
                 // handle the ending semicolon (the last child of the child)
                 const Style::WhitespacePlacement style = context.style.spacing.forLoops.semicolons;
-                
+
                 TSNode prev = ts_node_child(child, childChildCount - 2);
                 TSNode semicolon = ts_node_child(child, childChildCount - 1);
                 TSNode next = ts_node_child(node, childIndex + 1);
@@ -103,7 +108,7 @@ namespace {
                 EnsureSpacing(node, childIndex + 1, style, context);
             }
         } else if (fieldName == "condition") {
-            // handle ending semicolon (its childIndex + 1 now)   
+            // handle ending semicolon (its childIndex + 1 now)
             const Style::WhitespacePlacement style = context.style.spacing.forLoops.semicolons;
             EnsureSpacing(node, childIndex + 1, style, context);
         } else if (fieldName == "update") {
@@ -117,7 +122,7 @@ namespace {
                 CommaExpressionSpacing(child, style, context);
             }
 
-            // handle closing paranthesis (its childIndex + 1 now)            
+            // handle closing paranthesis (its childIndex + 1 now)
             const Style::WhitespacePlacement style = context.style.spacing.forLoops.parentheses.closing;
             EnsureSpacing(node, childIndex + 1, style, context);
         } else if (fieldName == "body") {
@@ -135,7 +140,7 @@ namespace {
         assert(ts_node_symbol(node) == BINARY_EXPRESSION);
 
         std::string_view fieldName = ChildFieldName(node, childIndex);
-        if (fieldName == "operator") {        
+        if (fieldName == "operator") {
             Style::WhitespacePlacement style = context.style.spacing.binaryOperator;
 
             TSNode lhs = ts_node_child(node, childIndex - 1);
@@ -167,7 +172,7 @@ namespace {
 }
 
 namespace tree_sitter_format {
-    
+
 void SpaceTraverser::reset(const TraverserContext& context) {
     previousPosition = Position::StartOf(context.document.root());
 }

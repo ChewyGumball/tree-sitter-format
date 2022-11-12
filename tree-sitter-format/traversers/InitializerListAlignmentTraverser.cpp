@@ -46,7 +46,7 @@ namespace {
 
     void AlignNodes(std::vector<InitializerListElements>& nodes, size_t index, const Style::Justify& justification, TraverserContext& context) {
         uint32_t maxColumn = 0;
-        
+
         // We look at the end point because of compound assignment operators.
         // The '=' character is always the last one, and thats what we want
         // to align.
@@ -128,7 +128,11 @@ namespace {
         for(uint32_t i = 1; i < childCount; i+=2) {
             TSNode child = ts_node_child(node, i);
             TSSymbol symbol = ts_node_symbol(child);
-            std::cout << ts_node_type(child) << std::endl;
+
+            // If this list is unformattable, skip it
+            if (context.document.overlapsUnformattableRange(Range::Of(child))) {
+                continue;
+            }
 
             if (symbol == INITIALIZER_LIST && IsAllOnOneLine(child)) {
                 std::vector<uint32_t> list;
@@ -138,11 +142,19 @@ namespace {
                 uint32_t previousLine = ts_node_end_point(child).row;
                 for(; i < childCount; i+=2) {
                     TSNode c = ts_node_child(node, i);
+
+                    // If this list is unformattable, we want to break the chain of
+                    // aligned lists. It will be skipped on the next iteration of the
+                    // outer loop.
+                    if (context.document.overlapsUnformattableRange(Range::Of(c))) {
+                        break;
+                    }
+
                     uint32_t currentLine = ts_node_end_point(c).row;
 
                     bool isSameLine = previousLine + 1 != currentLine;
                     previousLine = currentLine;
-                    
+
                     if (style.acrossComments && ts_node_is_extra(c)) {
                         continue;
                     }
