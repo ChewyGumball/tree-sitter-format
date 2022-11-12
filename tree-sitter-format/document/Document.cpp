@@ -42,7 +42,7 @@ namespace {
             DocumentSlice comment = r.document.slice(Range::Of(node)).trimBack();
 
             if (r.currentStartNode.has_value()) {
-                if (comment.is("// clang-format: off"sv) || comment.is("// tree-sitter-format: off"sv)) {
+                if (comment.is("// clang-format: on"sv) || comment.is("// tree-sitter-format: on"sv)) {
                     Position start = Position::StartOf(r.currentStartNode.value());
                     Position end = Position::EndOf(node);
                     r.ranges.push_back(Range::Between(start, end));
@@ -50,7 +50,7 @@ namespace {
                     r.currentStartNode = std::nullopt;
                 }
             } else {
-                if (comment.is("// clang-format: on"sv) || comment.is("// tree-sitter-format: on"sv)) {
+                if (comment.is("// clang-format: off"sv) || comment.is("// tree-sitter-format: off"sv)) {
                     r.currentStartNode = node;
                 }
             }
@@ -230,6 +230,38 @@ namespace tree_sitter_format {
             }
 
             if (unformattableRange.end > range.start) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool Document::isWithinAnUnformattableRange(const Range& range) const {
+        for(const Range& unformattableRange : unformattableRanges) {
+            if (unformattableRange.start >= range.end) {
+                break;
+            }
+
+            if (unformattableRange.start <= range.start && unformattableRange.end > range.start) {
+                return true;
+            }
+
+            if (unformattableRange.start < range.end && unformattableRange.end >= range.end) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool Document::isWithinAnUnformattableRange(const Position& position) const {
+        for(const Range& unformattableRange : unformattableRanges) {
+            if (unformattableRange.start >= position) {
+                break;
+            }
+
+            if (unformattableRange.start <= position && unformattableRange.end > position) {
                 return true;
             }
         }

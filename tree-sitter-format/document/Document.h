@@ -44,7 +44,16 @@ public:
     const std::string& originalContents() const;
     const std::string_view originalContentsAt(const Range& range) const;
 
+    // Returns whether the input range contains any unformattable ranges, or
+    // its end points are contained within any unformattable ranges.
     bool overlapsUnformattableRange(const Range& range) const;
+
+    // Returns whether the input range's end points are within any unformattable
+    // ranges. This does not return true if only  an unformattable range is
+    // entirely contained within the input range.
+    bool isWithinAnUnformattableRange(const Range& range) const;
+
+    bool isWithinAnUnformattableRange(const Position& position) const;
 
     TSNode root() const;
 
