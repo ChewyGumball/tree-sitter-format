@@ -24,14 +24,15 @@ private:
 
     std::unique_ptr<TSParser, TSParserDeleter> parser;
     std::unique_ptr<TSTree, TSTreeDeleter> tree;
+    std::vector<Range> unformattableRanges;
 
     // Returns the index of the element after the split
     size_t splitAtPosition(uint32_t position);
 
     static const char* Read(void* payload, uint32_t byte_index, TSPoint position, uint32_t *bytes_read);
 
-    void insertBytes(Position position, std::string_view bytes);
-    void deleteBytes(Range range);
+    void insertBytes(const Position& position, std::string_view bytes);
+    void deleteBytes(const Range& range);
 
 public:
     Document(const std::filesystem::path& file);
@@ -41,7 +42,9 @@ public:
     void applyEdits(std::vector<Edit> edits);
 
     const std::string& originalContents() const;
-    const std::string_view originalContentsAt(Range range) const;
+    const std::string_view originalContentsAt(const Range& range) const;
+
+    bool overlapsUnformattableRange(const Range& range) const;
 
     TSNode root() const;
 
