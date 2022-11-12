@@ -1,11 +1,5 @@
 #include <tree-sitter-format/traversers/Traverser.h>
 
-#include <iostream>
-
-namespace {
-    
-}
-
 namespace tree_sitter_format {
 
 void Traverser::reset(const TraverserContext&) { };
@@ -21,25 +15,32 @@ std::vector<Edit> Traverser::traverse(const Document& document, const Style& sty
     };
 
     reset(context);
-    traverse(document.root(), context);
+
+    TSTreeCursor cursor = ts_tree_cursor_new(document.root());
+    traverse(&cursor, context);
+    ts_tree_cursor_delete(&cursor);
 
     return std::move(context.edits);
 }
 
-void Traverser::traverse(TSNode node, TraverserContext& context) {
+void Traverser::traverse(TSTreeCursor* cursor, TraverserContext& context) {
+    TSNode node = ts_tree_cursor_current_node(cursor);
     if (ts_node_is_null(node)) {
         return;
     }
 
-    uint32_t childCount = ts_node_child_count(node);
-    if (childCount == 0) {
-        visitLeaf(node, context);
+    if (ts_tree_cursor_goto_first_child(cursor)) {
+        uint32_t childIndex = 0;
+        do {
+            preVisitChild(node, childIndex, context);
+            traverse(cursor, context);
+            postVisitChild(node, childIndex, context);
+
+            childIndex++;
+        } while (ts_tree_cursor_goto_next_sibling(cursor));
+        assert(ts_tree_cursor_goto_parent(cursor));
     } else {
-        for(uint32_t i = 0; i < childCount; i++) {
-            preVisitChild(node, i, context);
-            traverse(ts_node_child(node, i), context);
-            postVisitChild(node, i, context);
-        }
+        visitLeaf(node, context);
     }
 }
 

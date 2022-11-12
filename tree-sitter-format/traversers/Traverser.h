@@ -29,7 +29,7 @@ public:
     virtual ~Traverser() = default;
 
     std::vector<Edit> traverse(const Document& document, const Style& style);
-    void traverse(TSNode node, TraverserContext& context);
+    void traverse(TSTreeCursor* node, TraverserContext& context);
 };
 
 }
