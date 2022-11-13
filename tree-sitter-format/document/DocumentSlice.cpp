@@ -79,8 +79,8 @@ namespace tree_sitter_format {
         }
 
         Range subRange {
-            .start = lastStartOfWhitespace.value_or(elementRange.end),
-            .end = elementRange.end,
+            .start = elementRange.start,
+            .end = lastStartOfWhitespace.value_or(elementRange.end),
         };
 
         return slice(subRange);

@@ -155,7 +155,7 @@ std::vector<TestSuite<Style::Indentation>> TEST_CASES {
 };
 
 
-TEST_CASE("While Loops") {    
+TEST_CASE("While Loops") {
     TestContext<Style::Indentation> context {
         .styleNames = INDENTATION_NAMES,
         .styleUpdater = [](Style& style, Style::Indentation indentation) {
@@ -167,4 +167,240 @@ TEST_CASE("While Loops") {
     context.style.indentation.whitespace = Style::IndentationWhitespace::Spaces;
 
     RunTest(context, TEST_CASES);
+}
+
+const std::string NONE_UNFORMATTABLE_START = R"(
+// tree-sitter-format off
+while(false)
+// tree-sitter-format on
+{
+int a;
+}
+)";
+
+const std::string NONE_UNFORMATTABLE_START_OPEN = R"(
+// tree-sitter-format off
+while(false)
+{
+// tree-sitter-format on
+int a;
+}
+)";
+
+const std::string NONE_UNFORMATTABLE_START_OPEN_BODY = R"(
+// tree-sitter-format off
+while(false)
+{
+int a;
+// tree-sitter-format on
+}
+)";
+
+const std::string NONE_UNFORMATTABLE_START_OPEN_BODY_CLOSE = R"(
+// tree-sitter-format off
+while(false)
+{
+int a;
+}
+// tree-sitter-format on
+)";
+
+const std::string NONE_UNFORMATTABLE_OPEN = R"(
+while(false)
+// tree-sitter-format off
+{
+// tree-sitter-format on
+int a;
+}
+)";
+
+const std::string NONE_UNFORMATTABLE_OPEN_BODY = R"(
+while(false)
+// tree-sitter-format off
+{
+int a;
+// tree-sitter-format on
+}
+)";
+
+const std::string NONE_UNFORMATTABLE_OPEN_BODY_CLOSE = R"(
+while(false)
+// tree-sitter-format off
+{
+int a;
+}
+// tree-sitter-format on
+)";
+
+const std::string NONE_UNFORMATTABLE_BODY = R"(
+while(false)
+{
+// tree-sitter-format off
+int a;
+// tree-sitter-format on
+}
+)";
+
+const std::string NONE_UNFORMATTABLE_BODY_CLOSE = R"(
+while(false)
+{
+// tree-sitter-format off
+int a;
+}
+// tree-sitter-format on
+)";
+
+const std::string NONE_UNFORMATTABLE_CLOSE = R"(
+while(false)
+{
+int a;
+// tree-sitter-format off
+}
+// tree-sitter-format on
+)";
+
+const std::string NONE_UNFORMATTABLE_OPEN_CLOSE = R"(
+while(false)
+// tree-sitter-format off
+{
+// tree-sitter-format on
+int a;
+// tree-sitter-format off
+}
+// tree-sitter-format on
+)";
+
+const std::string BRACES_INDENTED_UNFORMATTABLE_START = R"(
+// tree-sitter-format off
+while(false)
+// tree-sitter-format on
+    {
+    int a;
+    }
+)";
+
+const std::string BRACES_INDENTED_UNFORMATTABLE_START_OPEN = R"(
+// tree-sitter-format off
+while(false)
+{
+// tree-sitter-format on
+    int a;
+    }
+)";
+
+const std::string BRACES_INDENTED_UNFORMATTABLE_START_OPEN_BODY = R"(
+// tree-sitter-format off
+while(false)
+{
+int a;
+// tree-sitter-format on
+    }
+)";
+
+const std::string BRACES_INDENTED_UNFORMATTABLE_START_OPEN_BODY_CLOSE = R"(
+// tree-sitter-format off
+while(false)
+{
+int a;
+}
+// tree-sitter-format on
+)";
+
+const std::string BRACES_INDENTED_UNFORMATTABLE_OPEN = R"(
+while(false)
+// tree-sitter-format off
+{
+// tree-sitter-format on
+    int a;
+    }
+)";
+
+const std::string BRACES_INDENTED_UNFORMATTABLE_OPEN_BODY = R"(
+while(false)
+// tree-sitter-format off
+{
+int a;
+// tree-sitter-format on
+    }
+)";
+
+const std::string BRACES_INDENTED_UNFORMATTABLE_OPEN_BODY_CLOSE = R"(
+while(false)
+// tree-sitter-format off
+{
+int a;
+}
+// tree-sitter-format on
+)";
+
+const std::string BRACES_INDENTED_UNFORMATTABLE_BODY = R"(
+while(false)
+    {
+// tree-sitter-format off
+int a;
+// tree-sitter-format on
+    }
+)";
+
+const std::string BRACES_INDENTED_UNFORMATTABLE_BODY_CLOSE = R"(
+while(false)
+    {
+// tree-sitter-format off
+int a;
+}
+// tree-sitter-format on
+)";
+
+const std::string BRACES_INDENTED_UNFORMATTABLE_CLOSE = R"(
+while(false)
+    {
+    int a;
+// tree-sitter-format off
+}
+// tree-sitter-format on
+)";
+
+const std::string BRACES_INDENTED_UNFORMATTABLE_OPEN_CLOSE = R"(
+while(false)
+// tree-sitter-format off
+{
+// tree-sitter-format on
+    int a;
+// tree-sitter-format off
+}
+// tree-sitter-format on
+)";
+
+// We are only going to tests unformattable regions with one style because the code
+// that determines unformattablity is the same for all styles. Doing full coverage
+// of styles would be an insane number of combinations.
+std::vector<TestSuite<Style::Indentation>> TEST_CASES_WITH_UNFORMATTABLE_RANGES {
+    {Style::Indentation::BracesIndented, {
+            {"None Unformattable Start",                 NONE_UNFORMATTABLE_START,                 BRACES_INDENTED_UNFORMATTABLE_START},
+            // {"None Unformattable Start Open",            NONE_UNFORMATTABLE_START_OPEN,            BRACES_INDENTED_UNFORMATTABLE_START_OPEN},
+            // {"None Unformattable Start Open Body",       NONE_UNFORMATTABLE_START_OPEN_BODY,       BRACES_INDENTED_UNFORMATTABLE_START_OPEN_BODY},
+            // {"None Unformattable Start Open Body Close", NONE_UNFORMATTABLE_START_OPEN_BODY_CLOSE, BRACES_INDENTED_UNFORMATTABLE_START_OPEN_BODY_CLOSE},
+            // {"None Unformattable Open",                  NONE_UNFORMATTABLE_OPEN,                  BRACES_INDENTED_UNFORMATTABLE_OPEN},
+            // {"None Unformattable Open Body",             NONE_UNFORMATTABLE_OPEN_BODY,             BRACES_INDENTED_UNFORMATTABLE_OPEN_BODY},
+            // {"None Unformattable Open Body Close",       NONE_UNFORMATTABLE_OPEN_BODY_CLOSE,       BRACES_INDENTED_UNFORMATTABLE_OPEN_BODY_CLOSE},
+            // {"None Unformattable Body Close",            NONE_UNFORMATTABLE_BODY_CLOSE,            BRACES_INDENTED_UNFORMATTABLE_BODY_CLOSE},
+            // {"None Unformattable Close",                 NONE_UNFORMATTABLE_CLOSE,                 BRACES_INDENTED_UNFORMATTABLE_CLOSE},
+            // {"None Unformattable Open Close",            NONE_UNFORMATTABLE_OPEN_CLOSE,            BRACES_INDENTED_UNFORMATTABLE_OPEN_CLOSE},
+        }
+    },
+};
+
+
+TEST_CASE("While Loops With Unformattable Ranges") {
+    TestContext<Style::Indentation> context {
+        .styleNames = INDENTATION_NAMES,
+        .styleUpdater = [](Style& style, Style::Indentation indentation) {
+            style.indentation.whileLoops = indentation;
+        }
+    };
+
+    context.formatter.addTraverser(std::make_unique<IndentationTraverser>());
+    context.style.indentation.whitespace = Style::IndentationWhitespace::Spaces;
+
+    RunTest(context, TEST_CASES_WITH_UNFORMATTABLE_RANGES);
 }

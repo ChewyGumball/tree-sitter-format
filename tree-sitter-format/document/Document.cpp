@@ -257,7 +257,7 @@ namespace tree_sitter_format {
 
     bool Document::isWithinAnUnformattableRange(const Position& position) const {
         for(const Range& unformattableRange : unformattableRanges) {
-            if (unformattableRange.start >= position) {
+            if (unformattableRange.start > position) {
                 break;
             }
 
