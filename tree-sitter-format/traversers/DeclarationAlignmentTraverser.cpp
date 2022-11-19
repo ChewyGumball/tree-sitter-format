@@ -37,7 +37,7 @@ namespace {
             TSNode child = ts_node_child(node, i);
             assert(IsDeclarationLike(child));
 
-            TSNode firstDeclarator = FindFirstNonExtraChild(child, 1);
+            TSNode firstDeclarator = ts_node_child_by_field_name(child, "declarator", 10);
             assert(!ts_node_is_null(firstDeclarator));
 
             while(!IsIdentifierLike(firstDeclarator)) {
