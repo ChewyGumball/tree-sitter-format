@@ -3,6 +3,7 @@
 #include <tree_sitter/api.h>
 
 #include <string_view>
+#include <vector>
 
 namespace tree_sitter_format {
 
@@ -28,5 +29,7 @@ namespace tree_sitter_format {
 [[nodiscard]] bool IsWhitespace(char32_t character);
 [[nodiscard]] bool IsDigit(char32_t character);
 [[nodiscard]] bool IsPunctuation(char32_t character);
+
+std::vector<std::vector<TSNode>> GroupNodesOnConsecutiveLines(const std::vector<TSNode> & nodes);
 
 }

@@ -5,6 +5,7 @@
 #include <array>
 #include <unordered_map>
 #include <assert.h>
+#include <deque>
 
 namespace tree_sitter_format {
 
@@ -208,6 +209,36 @@ std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
     }
 
     return false;
+}
+
+std::vector<std::vector<TSNode>> GroupNodesOnConsecutiveLines(const std::vector<TSNode> & nodes) {
+    std::vector<std::vector<TSNode>> groups;
+    std::deque<TSNode> nodeQueue(nodes.begin(), nodes.end());
+
+    while(!nodeQueue.empty()) {
+        TSNode start = nodeQueue.front();
+        nodeQueue.pop_front();
+
+        std::vector<TSNode> currentGroup = {start};
+        uint32_t previousLine = ts_node_end_point(start).row;
+
+        while(!nodeQueue.empty()) {
+            TSNode current = nodeQueue.front();
+            const uint32_t currentLine = ts_node_end_point(current).row;
+
+            if (currentLine != previousLine + 1) {
+                break;
+            }
+
+            currentGroup.push_back(current);
+            previousLine = currentLine;
+            nodeQueue.pop_front();
+        }
+
+        groups.push_back(std::move(currentGroup));
+    }
+
+    return groups;
 }
 
 }

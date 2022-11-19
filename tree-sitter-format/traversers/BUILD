@@ -24,7 +24,7 @@ tsf_cc_library(
         "//tree-sitter-format/traversers:traverser",
         "//tree-sitter-format:util",
     ],
-    
+
     visibility = ["//visibility:public"],
 )
 
@@ -50,7 +50,7 @@ tsf_cc_library(
         "//tree-sitter-format/traversers:traverser",
         "//tree-sitter-format:util",
     ],
-    
+
     visibility = ["//visibility:public"],
 )
 
@@ -63,7 +63,7 @@ tsf_cc_library(
         "//tree-sitter-format/traversers:traverser",
         "//tree-sitter-format:util",
     ],
-    
+
     visibility = ["//visibility:public"],
 )
 
@@ -76,7 +76,7 @@ tsf_cc_library(
         "//tree-sitter-format/traversers:traverser",
         "//tree-sitter-format:util",
     ],
-    
+
     visibility = ["//visibility:public"],
 )
 
@@ -89,7 +89,7 @@ tsf_cc_library(
         "//tree-sitter-format/traversers:traverser",
         "//tree-sitter-format:util",
     ],
-    
+
     visibility = ["//visibility:public"],
 )
 
@@ -102,7 +102,7 @@ tsf_cc_library(
         "//tree-sitter-format/traversers:traverser",
         "//tree-sitter-format:util",
     ],
-    
+
     visibility = ["//visibility:public"],
 )
 
@@ -115,7 +115,20 @@ tsf_cc_library(
         "//tree-sitter-format/traversers:traverser",
         "//tree-sitter-format:util",
     ],
-    
+
+    visibility = ["//visibility:public"],
+)
+
+tsf_cc_library(
+    name = "comment_alignment_traverser",
+    hdrs = ["CommentAlignmentTraverser.h"],
+    srcs = ["CommentAlignmentTraverser.cpp"],
+    deps = [
+        "//tree-sitter-format:constants",
+        "//tree-sitter-format/traversers:traverser",
+        "//tree-sitter-format:util",
+    ],
+
     visibility = ["//visibility:public"],
 )
 
@@ -127,6 +140,6 @@ tsf_cc_library(
         "//tree-sitter-format/traversers:traverser",
         "//tree-sitter-format:util",
     ],
-    
+
     visibility = ["//visibility:public"],
 )
