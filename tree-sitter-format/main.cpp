@@ -27,8 +27,34 @@ using namespace std::literals::string_view_literals;
 
 using namespace tree_sitter_format;
 
-const std::filesystem::path inputFileName = "G:\\Projects\\tree-sitter-format\\test.cpp";
-const std::filesystem::path outputFileName = "G:\\Projects\\tree-sitter-format\\test.cpp.out";
+const std::filesystem::path inputFileName = "G:\\Projects\\tree-sitter-format\\tests\\indentation\\DoWhileLoops.cpp";
+const std::filesystem::path outputFileName = "G:\\Projects\\tree-sitter-format\\tests\\indentation\\DoWhileLoops.cpp.out";
+
+/*
+
+--ignore-clang-format-style-files
+--ignore-clang-format-comment-commands
+--in-place, -i
+--ignore-parse-errors
+--print-parse-errors
+--ignore-parse-corrections
+--print-parse-corrections
+
+
+// clang-format compatability options, see https://clang.llvm.org/docs/ClangFormat.html:
+--dry-run, -n
+--dump-config
+--files
+--style=file[:path] (not any of the presets)
+--verbose
+-i
+
+path [path, ...]
+*/
+
+
+
+
 
 int main() {
     #ifdef _DEBUG
@@ -53,7 +79,7 @@ int main() {
     if (ts_node_has_error(root)) {
         std::cerr << "There was an error parsing. Skipping formatting." << std::endl;
         // TODO: print the location of the parse error - traverse until an ERROR node, print line:column
-        return EXIT_FAILURE;
+        //return EXIT_FAILURE;
     }
 
 
@@ -65,11 +91,11 @@ int main() {
 
     Formatter formatter;
     // Ensure Braces
-    //formatter.addTraverser(std::make_unique<BracketExistanceTraverser>());
+    formatter.addTraverser(std::make_unique<BracketExistanceTraverser>());
     // Reindent
-    //formatter.addTraverser(std::make_unique<IndentationTraverser>());
+    formatter.addTraverser(std::make_unique<IndentationTraverser>());
     // Debug Print
-    formatter.addTraverser(std::make_unique<ParseTraverser>());
+    //formatter.addTraverser(std::make_unique<ParseTraverser>());
     // Trailing Space
     formatter.addTraverser(std::make_unique<SpaceTraverser>());
     // Alignment
