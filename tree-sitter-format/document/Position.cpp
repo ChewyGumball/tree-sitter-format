@@ -3,17 +3,37 @@
 namespace tree_sitter_format {
 
 Position Position::StartOf(TSNode node) {
-    return Position {
-        .location = ts_node_start_point(node),
-        .byteOffset = ts_node_start_byte(node),
-    };
+    if (ts_node_is_null(node)) {
+        return Position {
+            .location = TSPoint {
+                .row = 0,
+                .column = 0,
+            },
+            .byteOffset = 0,
+        };
+    } else {
+        return Position {
+            .location = ts_node_start_point(node),
+            .byteOffset = ts_node_start_byte(node),
+        };
+    }
 }
 
 Position Position::EndOf(TSNode node) {
-    return Position {
-        .location = ts_node_end_point(node),
-        .byteOffset = ts_node_end_byte(node),
-    };
+    if (ts_node_is_null(node)) {
+        return Position {
+            .location = TSPoint {
+                .row = 0,
+                .column = 0,
+            },
+            .byteOffset = 0,
+        };
+    } else {
+        return Position {
+            .location = ts_node_end_point(node),
+            .byteOffset = ts_node_end_byte(node),
+        };
+    }
 }
 
 bool Position::operator==(const Position& other) const {

@@ -8,3 +8,11 @@ tsf_cc_test(
         "//tests:test_utils",
     ]
 )
+tsf_cc_test(
+    name = "trailing",
+    srcs = ["Trailing.cpp"],
+    deps = [
+        "//tree-sitter-format/traversers:comment_alignment_traverser",
+        "//tests:test_utils",
+    ]
+)

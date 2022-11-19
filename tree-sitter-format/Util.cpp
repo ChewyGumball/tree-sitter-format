@@ -85,10 +85,16 @@ std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
 }
 
 [[nodiscard]] TSNode FindPreviousNode(TSNode node) {
-    TSNode previous = ts_node_prev_sibling(node);
+    TSNode current = node;
+    TSNode previous = ts_node_prev_sibling(current);
     while (ts_node_is_null(previous)) {
-        TSNode parent = ts_node_parent(node);
-        previous = ts_node_prev_sibling(parent);
+        TSNode parent = ts_node_parent(current);
+        if (ts_node_is_null(parent)) {
+            return NullNode();
+        }
+
+        current = parent;
+        previous = ts_node_prev_sibling(current);
     }
 
     return previous;

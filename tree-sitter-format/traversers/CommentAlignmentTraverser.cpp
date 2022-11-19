@@ -11,11 +11,6 @@ namespace {
 
     void LeftJustifyNodes(const std::vector<TSNode>& comments, TraverserContext& context) {
         for(TSNode comment : comments) {
-            // Don't change comments that are in an unformattable range
-            if (context.document.overlapsUnformattableRange(Range::Of(comment))) {
-                continue;
-            }
-
             TSNode previous = FindPreviousNode(comment);
 
             Position previousPosition = Position::EndOf(previous);
@@ -24,7 +19,7 @@ namespace {
             if (previousPosition.location.row == currentPosition.location.row) {
                 // If we are already one space after the end of the previous node on the line, we don't
                 // need to do anything.
-                if (previousPosition.location.column != currentPosition.location.column - 1) {
+                if (previousPosition.location.column == currentPosition.location.column - 1) {
                     continue;
                 }
 
@@ -44,7 +39,7 @@ namespace {
         TSNode previous = FindPreviousNode(node);
         // If the previous node ends on a different line than the current node starts,
         // the current node is the first node on the line.
-        return ts_node_end_point(previous).row != ts_node_start_point(node).row;
+        return Position::EndOf(previous).location.row != Position::StartOf(node).location.row;
     }
 
     Range ToEndOfPreviousNode(TSNode node) {
@@ -69,7 +64,7 @@ namespace {
             context.edits.push_back(DeleteEdit{.range = range});
 
             uint32_t columnsToAdd = maxColumn - range.start.location.column;
-            context.edits.push_back(InsertEdit{.position = ranges[i].start.byteOffset, .bytes = GetSpaces(columnsToAdd)});
+            context.edits.push_back(InsertEdit{.position = ranges[i].start, .bytes = GetSpaces(columnsToAdd)});
         }
     }
 
