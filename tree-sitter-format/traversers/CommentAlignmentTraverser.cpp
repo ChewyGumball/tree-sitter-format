@@ -42,11 +42,6 @@ namespace {
         return Position::EndOf(previous).location.row != Position::StartOf(node).location.row;
     }
 
-    Range ToEndOfPreviousNode(TSNode node) {
-        TSNode previous = FindPreviousNode(node);
-        return Range::Between(Position::EndOf(previous), Position::StartOf(node));
-    }
-
     void AlignNodes(const std::vector<TSNode>& nodes, TraverserContext& context) {
         std::vector<Range> ranges;
         uint32_t maxColumn = 0;

@@ -10,6 +10,8 @@
 #include <tree-sitter-format/traversers/BitfieldAlignmentTraverser.h>
 #include <tree-sitter-format/traversers/AssignmentAlignmentTraverser.h>
 #include <tree-sitter-format/traversers/InitializerListAlignmentTraverser.h>
+#include <tree-sitter-format/traversers/CommentAlignmentTraverser.h>
+#include <tree-sitter-format/traversers/MultilineCommentReflowTraverser.h>
 
 #include <tree-sitter-format/Formatter.h>
 
@@ -103,6 +105,8 @@ int main() {
     formatter.addTraverser(std::make_unique<BitfieldAlignmentTraverser>());
     formatter.addTraverser(std::make_unique<AssignmentAlignmentTraverser>());
     formatter.addTraverser(std::make_unique<InitializerListAlignmentTraverser>());
+    formatter.addTraverser(std::make_unique<CommentAlignmentTraverser>());
+    formatter.addTraverser(std::make_unique<MultilineCommentReflowTraverser>());
 
     formatter.format(style, document);
 

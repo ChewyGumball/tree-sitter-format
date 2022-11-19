@@ -12,7 +12,7 @@ namespace {
 
     struct InitializerListElements {
         std::vector<std::vector<TSNode>> elements;
-        uint32_t spaceAdded;
+        int32_t spaceAdded;
 
         InitializerListElements(TSNode list, bool separateCommas) : spaceAdded(0) {
             uint32_t childCount = ts_node_child_count(list);
@@ -45,11 +45,8 @@ namespace {
     }
 
     void AlignNodes(std::vector<InitializerListElements>& nodes, size_t index, const Style::Justify& justification, TraverserContext& context) {
-        uint32_t maxColumn = 0;
+        uint32_t maxWidth = 0;
 
-        // We look at the end point because of compound assignment operators.
-        // The '=' character is always the last one, and thats what we want
-        // to align.
         for(const InitializerListElements& e: nodes) {
             if (index >= e.elements.size() || e.elements[index].size() == 0) {
                 continue;
@@ -57,7 +54,9 @@ namespace {
 
             uint32_t start = ts_node_start_point(e.elements[index].front()).column;
             uint32_t end = ts_node_end_point(e.elements[index].back()).column;
-            maxColumn = std::max(maxColumn, end - start);
+
+            // this is +1 because we want the alignment to be one column after the preceeding comma
+            maxWidth = std::max(maxWidth, end - start + 1);
         }
 
         for(InitializerListElements& e: nodes) {
@@ -70,18 +69,29 @@ namespace {
 
             uint32_t start = ts_node_start_point(startNode).column;
             uint32_t end = ts_node_end_point(endNode).column;
-            uint32_t width = end - start;
+            uint32_t currentWidth = end - start;
 
-            assert(width <= maxColumn);
-            if (width == maxColumn) {
+            assert(currentWidth <= maxWidth);
+            if (currentWidth == maxWidth) {
                 continue;
             }
 
-            uint32_t spaceToAdd = maxColumn - width;
+            uint32_t spaceToAdd = maxWidth - currentWidth;
             e.spaceAdded += spaceToAdd;
 
-            Position insertPosition = justification == Style::Justify::Left ? Position::EndOf(endNode) : Position::StartOf(startNode);
-            context.edits.push_back(InsertEdit{.position = insertPosition, .bytes = GetSpaces(spaceToAdd)});
+            if (justification == Style::Justify::Right) {
+                Range toPreviousNode = ToEndOfPreviousNode(startNode);
+                e.spaceAdded -= toPreviousNode.byteCount();
+
+                context.edits.push_back(DeleteEdit{.range = toPreviousNode});
+                context.edits.push_back(InsertEdit{.position = toPreviousNode.start, .bytes = GetSpaces(spaceToAdd)});
+            } else {
+                Range toNextNode = ToStartOfNextNode(endNode);
+                e.spaceAdded -= toNextNode.byteCount();
+
+                context.edits.push_back(DeleteEdit{.range = toNextNode});
+                context.edits.push_back(InsertEdit{.position = toNextNode.start, .bytes = GetSpaces(spaceToAdd)});
+            }
         }
     }
 

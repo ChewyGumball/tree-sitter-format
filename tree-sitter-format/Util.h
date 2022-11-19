@@ -1,5 +1,7 @@
 #pragma once
 
+#include <tree-sitter-format/document/Range.h>
+
 #include <tree_sitter/api.h>
 
 #include <string_view>
@@ -12,7 +14,12 @@ namespace tree_sitter_format {
 [[nodiscard]] std::string_view ChildFieldName(TSNode node, uint32_t childIndex);
 [[nodiscard]] TSNode FindFirstNonExtraChild(TSNode node, uint32_t startingIndex);
 [[nodiscard]] TSNode FindLastNonExtraChild(TSNode node, uint32_t startingIndex);
+
+[[nodiscard]] TSNode FindNextNode(TSNode node);
+[[nodiscard]] Range ToStartOfNextNode(TSNode node);
+
 [[nodiscard]] TSNode FindPreviousNode(TSNode node);
+[[nodiscard]] Range ToEndOfPreviousNode(TSNode node);
 
 [[nodiscard]] bool IsCompoundStatementLike(TSNode node);
 [[nodiscard]] bool IsCaseWithSingleStatementBody(TSNode node);
@@ -24,6 +31,7 @@ namespace tree_sitter_format {
 [[nodiscard]] bool IsBitfieldDeclaration(TSNode node);
 
 [[nodiscard]] std::string_view GetSpaces(uint32_t count);
+
 
 
 [[nodiscard]] bool IsWhitespace(char32_t character);

@@ -84,6 +84,32 @@ std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
     return NullNode();
 }
 
+[[nodiscard]] TSNode FindNextNode(TSNode node) {
+    TSNode current = node;
+    TSNode next = ts_node_next_sibling(node);
+    while(ts_node_is_null(next)) {
+        TSNode parent = ts_node_parent(current);
+        if(ts_node_is_null(parent)) {
+            return NullNode();
+        }
+
+        current = parent;
+        next = ts_node_next_sibling(current);
+    }
+
+    return next;
+}
+
+[[nodiscard]] Range ToStartOfNextNode(TSNode node) {
+    TSNode next = FindNextNode(node);
+    if (ts_node_is_null(next)) {
+        return Range::Between(Position::EndOf(node), Position::EndOf(node));
+    } else {
+        return Range::Between(Position::EndOf(node), Position::StartOf(next));
+    }
+}
+
+
 [[nodiscard]] TSNode FindPreviousNode(TSNode node) {
     TSNode current = node;
     TSNode previous = ts_node_prev_sibling(current);
@@ -98,6 +124,11 @@ std::string_view ChildFieldName(TSNode node, uint32_t childIndex) {
     }
 
     return previous;
+}
+
+[[nodiscard]] Range ToEndOfPreviousNode(TSNode node) {
+    TSNode previous = FindPreviousNode(node);
+    return Range::Between(Position::EndOf(previous), Position::StartOf(node));
 }
 
 [[nodiscard]] bool IsCompoundStatementLike(TSNode node) {

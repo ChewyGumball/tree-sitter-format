@@ -12,6 +12,8 @@ tsf_cc_binary(
         "//tree-sitter-format/traversers:bitfield_alignment_traverser",
         "//tree-sitter-format/traversers:assignment_alignment_traverser",
         "//tree-sitter-format/traversers:initializer_list_alignment_traverser",
+        "//tree-sitter-format/traversers:comment_alignment_traverser",
+        "//tree-sitter-format/traversers:multiline_comment_reflow_traverser",
         "//tree-sitter-format/configuration",
         "//tree-sitter-format/document",
         "//tree-sitter-format/style",
@@ -36,6 +38,7 @@ tsf_cc_library(
     srcs = ["Util.cpp"],
     deps = [
         ":constants",
+        "//tree-sitter-format/document:range",
         "@tree-sitter",
     ],
 
